@@ -14,6 +14,7 @@ type Simulation struct {
 	Timespan
 	currentStep int
 	SolverSteps int
+	results     []State
 	Solver      func(sim *Simulation, s State) []State
 	Change      map[Symbol]StateChanger
 	config      struct {
@@ -37,13 +38,14 @@ func New() *Simulation {
 func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
 	state := sim.x0
-	var states, results []State
+	var states []State
+	sim.results = make([]State, 0, sim.SolverSteps*sim.Len())
+	sim.results = append(sim.results, state)
 	for sim.isRunning() {
 		sim.currentStep++
 		states = sim.Solver(sim, state)
+		sim.results = append(sim.results, states[1:]...)
 		state = states[len(states)-1]
-		results = append(results, state)
-
 		if sim.config.printResults {
 			fmt.Printf("%v\n", state)
 		}
@@ -67,6 +69,20 @@ func RK4Solver(sim *Simulation, s State) []State {
 		state := states[i]
 		nextState := newState(t)
 		// RK4 integration scheme
+		var integrator State = newState(t)
+		for i := 0; i < 4; i++ {
+			for sym, change := range sim.Change {
+				switch i {
+				case 0:
+					integrator.XEqual(sym, change(state))
+				case 1, 2:
+					integrator.XEqual(sym, change(state)+integrator.X(sym)*dt/2)
+				case 3:
+					integrator.XEqual(sym, change(state)+integrator.X(sym)*dt)
+				}
+			}
+		}
+
 		for sym, change := range sim.Change {
 			a := change(state)
 			b := change(state.XAdd(sym, dt/2*a))
@@ -85,6 +101,17 @@ func (sim *Simulation) SetX0FromMap(m map[Symbol]float64) {
 }
 
 // SetChangeMap Sets the ODE equations with a pre built map
+//
+// i.e.
+//
+//  sim.SetChangeMap(map[simulation.Symbol]simulation.StateChanger{
+//  	"theta":  func(s simulation.State) float64 {
+//  		return s.X("Dtheta")
+//  	},
+//  	"Dtheta": func(s simulation.State) float64 {
+//  		return 1
+//  	},
+//  })
 func (sim *Simulation) SetChangeMap(m map[Symbol]StateChanger) {
 	sim.Change = m
 }
@@ -99,4 +126,17 @@ func (sim *Simulation) CurrentStep() int {
 // Does not take into account Solver's steps
 func (sim *Simulation) LastTime() float64 {
 	return sim.stepLength * float64(sim.CurrentStep())
+}
+
+// XResults get numerical slice of simulation results for given symbol
+func (sim *Simulation) XResults(sym Symbol) []float64 {
+	res := make([]float64, len(sim.results))
+
+	if _, ok := sim.results[0].variables[sym]; !ok {
+		throwf("%v Symbol not in state", sym)
+	}
+	for i, r := range sim.results {
+		res[i] = r.variables[sym]
+	}
+	return res
 }

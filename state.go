@@ -50,6 +50,7 @@ func (s *State) XEqual(sym Symbol, val float64) {
 // XAdd adds a value to an existing symbol and returns
 // a copy of state with value added
 func (s State) XAdd(sym Symbol, val float64) State {
+	s.variables = copyStateX(s)
 	if _, ok := s.variables[sym]; !ok {
 		throwf("%v Symbol does not exist in State variables", sym)
 	}
@@ -65,6 +66,15 @@ func (ts Timespan) Len() int {
 // Dt Obtains the step length of simulation
 func (ts Timespan) Dt() float64 {
 	return ts.stepLength
+}
+
+// TimeVector is the ordered set of all Simulation time points
+func (ts Timespan) TimeVector() []float64 {
+	vec := make([]float64, ts.Len()+1)
+	for i := 0; i < ts.Len()+1; i++ {
+		vec[i] = float64(i)*ts.stepLength + ts.start
+	}
+	return vec
 }
 
 // NewTimespan generates a timespan object for simulation
@@ -84,4 +94,12 @@ func NewTimespan(Start, End float64, Steps int) Timespan {
 		stepLength: (End - Start) / float64(Steps),
 		onNext:     nxt,
 	}
+}
+
+func copyStateX(s State) map[Symbol]float64 {
+	cp := make(map[Symbol]float64)
+	for k, v := range s.variables {
+		cp[k] = v
+	}
+	return cp
 }
