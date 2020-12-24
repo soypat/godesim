@@ -3,20 +3,19 @@ package simulation
 import (
 	"fmt"
 	"time"
-)
 
-// Symbol is used to reference a simulation variable. It should be unique for each simulation
-type Symbol string
+	"github.com/go-sim/simulation/state"
+)
 
 // Simulation ...
 type Simulation struct {
-	x0 State
+	x0 state.State
 	Timespan
 	currentStep int
 	SolverSteps int
-	results     []State
-	Solver      func(sim *Simulation, s State) []State
-	Change      map[Symbol]StateChanger
+	results     []state.State
+	Solver      func(sim *Simulation, s state.State) []state.State
+	Change      map[state.Symbol]state.Changer
 	config      struct {
 		printResults bool
 		rk4delay     time.Duration
@@ -26,7 +25,7 @@ type Simulation struct {
 // New creates blank simulation
 func New() *Simulation {
 	sim := Simulation{
-		Change:      make(map[Symbol]StateChanger),
+		Change:      make(map[state.Symbol]state.Changer),
 		Timespan:    NewTimespan(0, 1, 10),
 		Solver:      RK4Solver,
 		SolverSteps: 1,
@@ -38,8 +37,8 @@ func New() *Simulation {
 func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
 	state := sim.x0
-	var states []State
-	sim.results = make([]State, 0, sim.SolverSteps*sim.Len())
+	var states []state.State
+	sim.results = make([]state.State, 0, sim.SolverSteps*sim.Len())
 	sim.results = append(sim.results, state)
 	for sim.isRunning() {
 		sim.currentStep++
@@ -60,8 +59,8 @@ func (sim *Simulation) isRunning() bool {
 
 // RK4Solver Integrates simulation state for next timesteps
 // using 4th order Runge-Kutta multivariable algorithm
-func RK4Solver(sim *Simulation, s State) []State {
-	states := make([]State, sim.SolverSteps+1)
+func RK4Solver(sim *Simulation, s state.State) []state.State {
+	states := make([]state.State, sim.SolverSteps+1)
 	// dt := sim.Dt()
 	states[0] = s
 	// t := sim.LastTime()
@@ -69,6 +68,7 @@ func RK4Solver(sim *Simulation, s State) []State {
 	for i := 0; i < len(states)-1; i++ {
 		a := ApplyFuncs(sim.Change, states[i])
 		b := ApplyFuncs(sim.Change, states[i])
+		print(a, b)
 		// RK4 integration scheme
 		// a := ApplyFuncs(s.Change, X)
 
@@ -78,7 +78,7 @@ func RK4Solver(sim *Simulation, s State) []State {
 }
 
 // SetX0FromMap sets simulation's initial X values from a Symbol map
-func (sim *Simulation) SetX0FromMap(m map[Symbol]float64) {
+func (sim *Simulation) SetX0FromMap(m map[state.Symbol]float64) {
 	sim.x0.varmap = m
 }
 
@@ -94,7 +94,7 @@ func (sim *Simulation) SetX0FromMap(m map[Symbol]float64) {
 //  		return 1
 //  	},
 //  })
-func (sim *Simulation) SetChangeMap(m map[Symbol]StateChanger) {
+func (sim *Simulation) SetChangeMap(m map[state.Symbol]state.Changer) {
 	sim.Change = m
 }
 
@@ -111,7 +111,7 @@ func (sim *Simulation) LastTime() float64 {
 }
 
 // XResults get numerical slice of simulation results for given symbol
-func (sim *Simulation) XResults(sym Symbol) []float64 {
+func (sim *Simulation) XResults(sym state.Symbol) []float64 {
 	res := make([]float64, len(sim.results))
 
 	if _, ok := sim.results[0].varmap[sym]; !ok {
@@ -125,7 +125,7 @@ func (sim *Simulation) XResults(sym Symbol) []float64 {
 
 // ApplyFuncs obtain StateChanger results without modifying State
 // Returns an ordered float slice according to State.XSymbols()
-func ApplyFuncs(F map[Symbol]StateChanger, S State) []float64 {
+func ApplyFuncs(F map[state.Symbol]state.Changer, S state.State) []float64 {
 	syms := S.XSymbols()
 	if len(F) != len(syms) {
 		throwf("length of func slice not equal to float slice (%v vs. %v)", len(F), len(syms))
