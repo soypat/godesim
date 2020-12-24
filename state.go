@@ -2,9 +2,11 @@ package simulation
 
 // State ...
 type State struct {
-	variables map[Symbol]float64
-	inputs    map[Symbol]float64
-	time      float64
+	varmap   map[Symbol]int
+	x        []float64
+	inputmap map[Symbol]int
+	u        []float64
+	time     float64
 }
 
 // StateChanger represents ODE change of a simulation X variable
@@ -21,41 +23,72 @@ type Timespan struct {
 }
 
 func newState(Time float64) State {
-	return State{variables: make(map[Symbol]float64), time: Time}
+	return State{varmap: make(map[Symbol]int), time: Time}
 }
 
 // X get a state variable
-func (s State) X(sym Symbol) (val float64) {
-	var ok bool
-	if val, ok = s.variables[sym]; !ok {
+func (s State) X(sym Symbol) float64 {
+	idx, ok := s.varmap[sym]
+	if !ok {
 		throwf("%v Symbol does not exist in State variables", sym)
 	}
-	return val
-}
-
-// XSet sets an existing State Symbol to a value
-func (s *State) XSet(sym Symbol, val float64) {
-	if _, ok := s.variables[sym]; !ok {
-		throwf("%v Symbol does not exist in State variables", sym)
-	}
-	s.variables[sym] = val
+	return s.x[idx]
 }
 
 // XEqual Set a State Symbol to a value.
 // If Symbol does not exist then it is created
 func (s *State) XEqual(sym Symbol, val float64) {
-	s.variables[sym] = val
+	s.xCreateIfNotExist(sym)
+	s.x[s.varmap[sym]] = val
 }
 
-// XAdd adds a value to an existing symbol and returns
-// a copy of state with value added
-func (s State) XAdd(sym Symbol, val float64) State {
-	s.variables = copyStateX(s)
-	if _, ok := s.variables[sym]; !ok {
+func (s *State) xCreateIfNotExist(sym Symbol) {
+	if _, ok := s.varmap[sym]; !ok {
+		s.x = append(s.x, 0)
+		s.varmap[sym] = len(s.varmap) - 1
+	}
+}
+
+// XSet sets an existing State Symbol to a value
+func (s *State) XSet(sym Symbol, val float64) {
+	if _, ok := s.varmap[sym]; !ok {
 		throwf("%v Symbol does not exist in State variables", sym)
 	}
-	s.variables[sym] += val
-	return s
+	s.XEqual(sym, val)
+}
+
+// Clone makes a duplicate of a State.
+func (s State) Clone() State {
+	return State{
+		varmap:   s.varmap,
+		x:        s.XFloats(),
+		inputmap: s.inputmap,
+		u:        s.UFloats(),
+		time:     s.time,
+	}
+}
+
+// XFloats returns state X vector
+func (s State) XFloats() []float64 {
+	cp := make([]float64, len(s.x))
+	copy(cp, s.x)
+	return cp
+}
+
+// UFloats returns state U vector
+func (s State) UFloats() []float64 {
+	cp := make([]float64, len(s.u))
+	copy(cp, s.u)
+	return cp
+}
+
+// XSymbols returns ordered state Symbol slice
+func (s State) XSymbols() []Symbol {
+	syms := make([]Symbol, len(s.varmap))
+	for sym, idx := range s.varmap {
+		syms[idx] = sym
+	}
+	return syms
 }
 
 // Len how many iterations expected for RK4
@@ -96,10 +129,6 @@ func NewTimespan(Start, End float64, Steps int) Timespan {
 	}
 }
 
-func copyStateX(s State) map[Symbol]float64 {
-	cp := make(map[Symbol]float64)
-	for k, v := range s.variables {
-		cp[k] = v
-	}
-	return cp
-}
+// ARITHMETIC
+
+func (s State) Add(s State)

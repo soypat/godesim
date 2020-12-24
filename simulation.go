@@ -62,42 +62,24 @@ func (sim *Simulation) isRunning() bool {
 // using 4th order Runge-Kutta multivariable algorithm
 func RK4Solver(sim *Simulation, s State) []State {
 	states := make([]State, sim.SolverSteps+1)
-	dt := sim.Dt()
+	// dt := sim.Dt()
 	states[0] = s
-	t := sim.LastTime()
+	// t := sim.LastTime()
+	// syms := states[0].XSymbols()
 	for i := 0; i < len(states)-1; i++ {
-		state := states[i]
-		nextState := newState(t)
+		a := ApplyFuncs(sim.Change, states[i])
+		b := ApplyFuncs(sim.Change, states[i])
 		// RK4 integration scheme
-		var integrator State = newState(t)
-		for i := 0; i < 4; i++ {
-			for sym, change := range sim.Change {
-				switch i {
-				case 0:
-					integrator.XEqual(sym, change(state))
-				case 1, 2:
-					integrator.XEqual(sym, change(state)+integrator.X(sym)*dt/2)
-				case 3:
-					integrator.XEqual(sym, change(state)+integrator.X(sym)*dt)
-				}
-			}
-		}
+		// a := ApplyFuncs(s.Change, X)
 
-		for sym, change := range sim.Change {
-			a := change(state)
-			b := change(state.XAdd(sym, dt/2*a))
-			c := change(state.XAdd(sym, dt/2*b))
-			d := change(state.XAdd(sym, dt*c))
-			nextState.XEqual(sym, state.X(sym)+dt/6*(a+2*(b+c)+d))
-		}
-		states[i+1] = nextState
+		// states[i+1] = nextState
 	}
 	return states
 }
 
 // SetX0FromMap sets simulation's initial X values from a Symbol map
 func (sim *Simulation) SetX0FromMap(m map[Symbol]float64) {
-	sim.x0.variables = m
+	sim.x0.varmap = m
 }
 
 // SetChangeMap Sets the ODE equations with a pre built map
@@ -132,11 +114,25 @@ func (sim *Simulation) LastTime() float64 {
 func (sim *Simulation) XResults(sym Symbol) []float64 {
 	res := make([]float64, len(sim.results))
 
-	if _, ok := sim.results[0].variables[sym]; !ok {
+	if _, ok := sim.results[0].varmap[sym]; !ok {
 		throwf("%v Symbol not in state", sym)
 	}
 	for i, r := range sim.results {
-		res[i] = r.variables[sym]
+		res[i] = r.x[r.varmap[sym]]
 	}
 	return res
+}
+
+// ApplyFuncs obtain StateChanger results without modifying State
+// Returns an ordered float slice according to State.XSymbols()
+func ApplyFuncs(F map[Symbol]StateChanger, S State) []float64 {
+	syms := S.XSymbols()
+	if len(F) != len(syms) {
+		throwf("length of func slice not equal to float slice (%v vs. %v)", len(F), len(syms))
+	}
+	dst := make([]float64, len(F))
+	for i := 0; i < len(F); i++ {
+		dst[i] = F[syms[i]](S)
+	}
+	return dst
 }
