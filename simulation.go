@@ -7,6 +7,8 @@ import (
 	"github.com/go-sim/simulation/state"
 )
 
+var overSix float64 = 0.166666666666666666666667
+
 // Simulation ...
 type Simulation struct {
 	x0 state.State
@@ -36,17 +38,18 @@ func New() *Simulation {
 // Begin starts simulation
 func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
-	state := sim.x0
+	st := sim.x0
+
 	var states []state.State
 	sim.results = make([]state.State, 0, sim.SolverSteps*sim.Len())
-	sim.results = append(sim.results, state)
+	sim.results = append(sim.results, st)
 	for sim.isRunning() {
 		sim.currentStep++
-		states = sim.Solver(sim, state)
+		states = sim.Solver(sim, st)
 		sim.results = append(sim.results, states[1:]...)
-		state = states[len(states)-1]
+		st = states[len(states)-1]
 		if sim.config.printResults {
-			fmt.Printf("%v\n", state)
+			fmt.Printf("%v\n", st)
 		}
 		time.Sleep(sim.config.rk4delay)
 	}
@@ -61,25 +64,46 @@ func (sim *Simulation) isRunning() bool {
 // using 4th order Runge-Kutta multivariable algorithm
 func RK4Solver(sim *Simulation, s state.State) []state.State {
 	states := make([]state.State, sim.SolverSteps+1)
-	// dt := sim.Dt()
+	dt := sim.Dt()
+
 	states[0] = s
 	// t := sim.LastTime()
 	// syms := states[0].XSymbols()
 	for i := 0; i < len(states)-1; i++ {
-		a := ApplyFuncs(sim.Change, states[i])
-		b := ApplyFuncs(sim.Change, states[i])
-		print(a, b)
-		// RK4 integration scheme
-		// a := ApplyFuncs(s.Change, X)
-
-		// states[i+1] = nextState
+		// create auxiliary states for calculation
+		b, c, d := states[i].CloneBlank(), states[i].CloneBlank(), states[i].CloneBlank()
+		a := StateDiff(sim.Change, states[i])
+		aaux := a.Clone()
+		b = StateDiff(sim.Change, state.AddTo(b, states[i],
+			state.ScaleTo(aaux, 0.5*dt, aaux)))
+		baux := b.Clone()
+		c = StateDiff(sim.Change, state.AddTo(c, states[i],
+			state.ScaleTo(baux, 0.5*dt, baux)))
+		caux := c.Clone()
+		d = StateDiff(sim.Change, state.AddTo(d, states[i],
+			state.ScaleTo(caux, dt, caux)))
+		state.Add(a, d)
+		state.Add(b, c)
+		state.AddScaled(a, 2, b)
+		states[i+1] = states[i].Clone()
+		state.AddScaled(states[i+1], dt*overSix, a)
+		// states[i+1] = x
+		// X = Xt[...,it]
+		// a = F(X,t, U)
+		// b = F(X+dt/2*a, t, U)
+		// c = F(X+dt/2*b, t, U)
+		// d = F(X+dt*c, t, U)
+		// Xt[...,it+1] = X + dt/6*(a+2*(b+c)+d)
 	}
 	return states
 }
 
 // SetX0FromMap sets simulation's initial X values from a Symbol map
 func (sim *Simulation) SetX0FromMap(m map[state.Symbol]float64) {
-	sim.x0.varmap = m
+	sim.x0 = state.New()
+	for sym, v := range m {
+		sim.x0.XEqual(sym, v)
+	}
 }
 
 // SetChangeMap Sets the ODE equations with a pre built map
@@ -112,27 +136,25 @@ func (sim *Simulation) LastTime() float64 {
 
 // XResults get numerical slice of simulation results for given symbol
 func (sim *Simulation) XResults(sym state.Symbol) []float64 {
-	res := make([]float64, len(sim.results))
-
-	if _, ok := sim.results[0].varmap[sym]; !ok {
-		throwf("%v Symbol not in state", sym)
-	}
+	vec := make([]float64, len(sim.results))
+	// TODO verify simulation has run!
+	sim.results[0].X(sym) // Check if variable exists
 	for i, r := range sim.results {
-		res[i] = r.x[r.varmap[sym]]
+		vec[i] = r.X(sym)
 	}
-	return res
+	return vec
 }
 
-// ApplyFuncs obtain StateChanger results without modifying State
-// Returns an ordered float slice according to State.XSymbols()
-func ApplyFuncs(F map[state.Symbol]state.Changer, S state.State) []float64 {
+// StateDiff obtain StateChanger results without modifying State
+// Returns state evolution (result of applying Changer functions to S)
+func StateDiff(F map[state.Symbol]state.Changer, S state.State) state.State {
+	diff := S.Clone()
 	syms := S.XSymbols()
 	if len(F) != len(syms) {
 		throwf("length of func slice not equal to float slice (%v vs. %v)", len(F), len(syms))
 	}
-	dst := make([]float64, len(F))
 	for i := 0; i < len(F); i++ {
-		dst[i] = F[syms[i]](S)
+		diff.XEqual(syms[i], F[syms[i]](S))
 	}
-	return dst
+	return diff
 }
