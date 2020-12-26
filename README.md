@@ -6,7 +6,7 @@
 ```go
 // Declare your rate-of-change functions using state-space symbols
 Dtheta := func(s state.State) float64 {
-		return s.X("Dtheta")
+	return s.X("Dtheta")
 }
 
 DDtheta := func(s state.State) float64 {
