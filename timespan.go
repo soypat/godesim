@@ -20,7 +20,7 @@ func (ts Timespan) Dt() float64 {
 	return ts.stepLength
 }
 
-// TimeVector is the ordered set of all Simulation time points
+// TimeVector is the ordered set of all Timespan time points
 func (ts Timespan) TimeVector() []float64 {
 	vec := make([]float64, ts.Len()+1)
 	for i := 0; i < ts.Len()+1; i++ {

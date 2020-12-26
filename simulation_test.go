@@ -27,7 +27,7 @@ func TestQuadratic(t *testing.T) {
 		"theta":  0,
 		"Dtheta": 0,
 	})
-
+	sim.SetTimespan(0.0, 1.0, 10)
 	sim.Begin()
 
 	time, x_res := sim.TimeVector(), sim.XResults("theta")
@@ -54,6 +54,7 @@ func Example_quadratic() {
 		"theta":  0,
 		"Dtheta": 0,
 	})
+	sim.SetTimespan(0.0, 1.0, 10)
 	sim.Begin()
 	fmt.Printf("%v:\n%v", sim.TimeVector(), sim.XResults("theta"))
 	// Output:

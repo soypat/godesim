@@ -13,6 +13,7 @@ var overSix float64 = 0.166666666666666666666667
 type Simulation struct {
 	x0 state.State
 	Timespan
+	currentTime float64
 	currentStep int
 	SolverSteps int
 	results     []state.State
@@ -28,7 +29,6 @@ type Simulation struct {
 func New() *Simulation {
 	sim := Simulation{
 		Change:      make(map[state.Symbol]state.Changer),
-		Timespan:    NewTimespan(0, 1, 10),
 		Solver:      RK4Solver,
 		SolverSteps: 1,
 	}
@@ -65,10 +65,7 @@ func (sim *Simulation) isRunning() bool {
 func RK4Solver(sim *Simulation, s state.State) []state.State {
 	states := make([]state.State, sim.SolverSteps+1)
 	dt := sim.Dt()
-
 	states[0] = s
-	// t := sim.LastTime()
-	// syms := states[0].XSymbols()
 	for i := 0; i < len(states)-1; i++ {
 		// create auxiliary states for calculation
 		b, c, d := states[i].CloneBlank(), states[i].CloneBlank(), states[i].CloneBlank()
@@ -87,13 +84,6 @@ func RK4Solver(sim *Simulation, s state.State) []state.State {
 		state.AddScaled(a, 2, b)
 		states[i+1] = states[i].Clone()
 		state.AddScaled(states[i+1], dt*overSix, a)
-		// states[i+1] = x
-		// X = Xt[...,it]
-		// a = F(X,t, U)
-		// b = F(X+dt/2*a, t, U)
-		// c = F(X+dt/2*b, t, U)
-		// d = F(X+dt*c, t, U)
-		// Xt[...,it+1] = X + dt/6*(a+2*(b+c)+d)
 	}
 	return states
 }
@@ -120,6 +110,11 @@ func (sim *Simulation) SetX0FromMap(m map[state.Symbol]float64) {
 //  })
 func (sim *Simulation) SetChangeMap(m map[state.Symbol]state.Changer) {
 	sim.Change = m
+}
+
+// SetTimespan Set time domain (step domain) for simulation
+func (sim *Simulation) SetTimespan(Start, End float64, Steps int) {
+	sim.Timespan = NewTimespan(Start, End, Steps)
 }
 
 // CurrentStep get number of steps done.
