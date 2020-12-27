@@ -70,7 +70,7 @@ func (sim *Simulation) verify() {
 
 // will contain heavy logic in future. event oriented stuff to come
 func (sim *Simulation) isRunning() bool {
-	return sim.CurrentStep() < sim.Len()
+	return sim.Timespan.end > sim.State.Time()+sim.Dt()*.9
 }
 
 func (sim *Simulation) changeSymbols() []state.Symbol {

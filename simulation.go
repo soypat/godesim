@@ -18,8 +18,6 @@ import (
 	"gonum.org/v1/gonum/floats"
 )
 
-const overSix float64 = 0.166666666666666666666667
-
 // Simulation contains dynamics of system and stores
 // simulation results.
 //
@@ -31,7 +29,6 @@ type Simulation struct {
 	State       state.State
 	currentTime float64
 	currentStep int
-	SolverSteps int
 	results     []state.State
 	Solver      func(sim *Simulation) []state.State
 	Change      map[state.Symbol]state.Changer
@@ -61,14 +58,13 @@ type Config struct {
 // Solver used is fourth order Runge-Kutta multivariable integration.
 //  simulation.Solver
 // How many solver steps are run between Timespan steps. Set to 1
-//  simulation.SolverSteps
+//  simulation.Algorithm.Steps
 func New() *Simulation {
 	sim := Simulation{
-		Change:      make(map[state.Symbol]state.Changer),
-		Solver:      RK4Solver,
-		SolverSteps: 1,
+		Change: make(map[state.Symbol]state.Changer),
+		Solver: RK4Solver,
 	}
-	sim.Domain = "time"
+	sim.Domain, sim.Algorithm.Steps = "time", 1
 	return &sim
 }
 
@@ -84,7 +80,7 @@ func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
 	sim.verifyPreBegin()
 
-	sim.results = make([]state.State, 0, sim.SolverSteps*sim.Len())
+	sim.results = make([]state.State, 0, sim.Algorithm.Steps*sim.Len())
 	sim.results = append(sim.results, sim.State)
 
 	var states []state.State
@@ -103,7 +99,8 @@ func (sim *Simulation) Begin() {
 // RK4Solver Integrates simulation state for next timesteps
 // using 4th order Runge-Kutta multivariable algorithm
 func RK4Solver(sim *Simulation) []state.State {
-	states := make([]state.State, sim.SolverSteps+1)
+	const overSix = 0.166666666666666666666667
+	states := make([]state.State, sim.Algorithm.Steps+1)
 	dt := sim.Dt()
 	states[0] = sim.State.Clone()
 	for i := 0; i < len(states)-1; i++ {
@@ -158,21 +155,9 @@ func (sim *Simulation) SetInputMap(m map[state.Symbol]state.Input) {
 	sim.Inputs = m
 }
 
-// CurrentStep get number of steps done.
-// Reaches maximum Simulation's Timespan's `Steps`
-func (sim *Simulation) CurrentStep() int {
-	return sim.currentStep
-}
-
 // CurrentTime obtain simulation step variable
 func (sim *Simulation) CurrentTime() float64 {
 	return sim.results[len(sim.results)-1].Time()
-}
-
-// LastTime Obtains last Simulation step time.
-// Does not take into account Solver's steps
-func (sim *Simulation) LastTime() float64 {
-	return sim.stepLength * float64(sim.CurrentStep())
 }
 
 // Results get vector of simulation results for given symbol (X or U)

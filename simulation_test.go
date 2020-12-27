@@ -10,6 +10,7 @@ import (
 )
 
 func TestQuadratic(t *testing.T) {
+
 	Dtheta := func(s state.State) float64 {
 		return s.X("Dtheta")
 	}
@@ -26,15 +27,18 @@ func TestQuadratic(t *testing.T) {
 		"theta":  0,
 		"Dtheta": 0,
 	})
-
-	sim.SetTimespan(0.0, 1, 10)
+	const N_steps = 2
+	sim.SetTimespan(0.0, 1, N_steps)
 	sim.Begin()
 
 	time, x_res := sim.Results("time"), sim.Results("theta")
 	x_quad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v })
+	if len(time) != N_steps+1 {
+		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+	}
 	for i := range x_quad {
 		if math.Abs(x_quad[i]-x_res[i]) > 0.000001 {
-			t.Fail()
+			t.Errorf("Resulting curve not quadratic")
 		}
 	}
 }

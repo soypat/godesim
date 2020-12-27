@@ -18,7 +18,7 @@ DDtheta := func(s state.State) float64 {
     return 1
 }
 // Set the simulation's differential equations and initial values and hit Begin!
-sim := simulation.New()
+sim := simulation.New() // Configurable with .SetConfig(simulation.Config{...})
 sim.SetChangeMap(map[state.Symbol]state.Changer{
     "theta":  Dtheta,
     "Dtheta": DDtheta,
@@ -39,9 +39,9 @@ for the domain t=0 to t=1s in 10 steps where theta and theta-dot are the `X` var
 
 ![](_assets/quadratic_eq_sol.png)
 
-
+### How to obtain results
 ```go
 // one can then obtain simulation results as float slices 
-t := sim.TimeVector()
-theta := sim.XResults("theta")
+t := sim.Results("time")
+theta := sim.Results("theta")
 ```
