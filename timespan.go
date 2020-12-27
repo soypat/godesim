@@ -1,13 +1,14 @@
 package simulation
 
-// Timespan ...
+import "math"
+
+// Timespan represents an iterable vector of evenly spaced time points.
+// Does not store state information on steps done.
 type Timespan struct {
 	start      float64
 	end        float64
 	steps      int
 	stepLength float64
-	counter    int
-	onNext     func()
 }
 
 // Len how many iterations expected for RK4
@@ -23,27 +24,44 @@ func (ts Timespan) Dt() float64 {
 // TimeVector is the ordered set of all Timespan time points
 func (ts Timespan) TimeVector() []float64 {
 	vec := make([]float64, ts.Len()+1)
-	for i := 0; i < ts.Len()+1; i++ {
-		vec[i] = float64(i)*ts.stepLength + ts.start
+	for step := 0; step < ts.Len()+1; step++ {
+		vec[step] = ts.time(step)
 	}
 	return vec
 }
 
-// NewTimespan generates a timespan object for simulation
+// SetTimespan Set time domain (step domain) for simulation
+func (tspan *Timespan) SetTimespan(Start, End float64, Steps int) {
+	(*tspan) = newTimespan(Start, End, Steps)
+}
+
+// time returns time corresponding to step in Timespan.
+func (tspan Timespan) time(Step int) float64 {
+	return float64(Step)*tspan.stepLength + tspan.start
+}
+
+// newTimespan generates a timespan object for simulation
 // Steps must be minimum 1.
-func NewTimespan(Start, End float64, Steps int) Timespan {
-	nxt := func() {}
+func newTimespan(Start, End float64, Steps int) Timespan {
+
 	if Start >= End {
-		throwf("Timespan start cannot be greater or equal to Timespan end. got %v >= %v", Start, End)
+		throwf("Timespan: Start cannot be greater or equal to End. got %v >= %v", Start, End)
 	}
 	if Steps < 1 {
-		throwf("steps in Timespan must be greater or equal to 1. got %v", Steps)
+		throwf("Timespan: Steps must be greater or equal to 1. got %v", Steps)
+	}
+
+	dt := (End - Start) / float64(Steps)
+	if dt == 0 {
+		throwf("Timespan: Resulting time step is 0")
+	}
+	if dt <= 1e5*math.SmallestNonzeroFloat64 {
+		warnf("warning: time step %e is very small", dt)
 	}
 	return Timespan{
 		start:      Start,
 		end:        End,
 		steps:      Steps,
-		stepLength: (End - Start) / float64(Steps),
-		onNext:     nxt,
+		stepLength: dt,
 	}
 }

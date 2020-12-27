@@ -1,0 +1,93 @@
+package simulation
+
+import (
+	"fmt"
+	"math"
+
+	"github.com/go-sim/simulation/state"
+	"gonum.org/v1/gonum/floats"
+)
+
+const (
+	escape   = "\x1b"
+	yellow   = 33
+	hiyellow = 93
+)
+
+// throwf terminate simulation run inmediately due to error
+func throwf(format string, a ...interface{}) {
+	panic(fmt.Errorf(format+"\n", a...))
+}
+
+func scolorf(color int, str string) string {
+	return fmt.Sprintf("%s[%dm%s%s[0m", escape, color, str, escape)
+}
+
+// warnf Gives you option to terminate simulation run inmediately due to error
+func warnf(format string, a ...interface{}) {
+	fmt.Printf(scolorf(yellow, format)+"\n", a...) //33 or 93 for HiYellow
+}
+
+func (sim *Simulation) verifyPreBegin() {
+	sim.verify()
+	if len(sim.results) > 0 {
+		throwf("Simulation.Begin(): Simulation results not empty")
+	}
+}
+
+func (sim *Simulation) verify() {
+	if len(sim.State.XSymbols()) == 0 {
+		throwf("Simulation: no X Symbols defined")
+	}
+	if sim.Len() == 0 {
+		throwf("Simulation: no step (time) vector defined")
+	}
+	if sim.Solver == nil {
+		throwf("Simulation: expected Simulation.Solver. got nil")
+	}
+	symsX, symsU := sim.changeSymbols(), sim.inputSymbols()
+	consX, consU := sim.State.ConsistencyX(symsX), sim.State.ConsistencyU(symsU)
+
+	if floats.HasNaN(consX) {
+		nanidx, _ := floats.Find([]int{}, math.IsNaN, consX, -1)
+		if len(nanidx) == 1 {
+			throwf("Simulation: : X State is inconsistent for %v. Match X Change with State Symbols", symsX[nanidx[0]])
+		} else {
+			throwf("Simulation: X State is inconsistent for %v and %d cases. Match X Change with State Symbols", symsX[nanidx[0]], len(nanidx)-1)
+		}
+		panic("should be unreachable")
+	}
+	if floats.HasNaN(consU) {
+		nanidx, _ := floats.Find([]int{}, math.IsNaN, consU, -1)
+		if len(nanidx) == 1 {
+			throwf("Simulation: : U State is inconsistent for %v. Match U Inputs with State Symbols", symsU[nanidx[0]])
+		} else {
+			throwf("Simulation: U State is inconsistent for %v and %d case(s). Match U Inputs with State Symbols", symsU[nanidx[0]], len(nanidx)-1)
+		}
+		panic("should be unreachable")
+	}
+}
+
+// will contain heavy logic in future. event oriented stuff to come
+func (sim *Simulation) isRunning() bool {
+	return sim.CurrentStep() < sim.Len()
+}
+
+func (sim *Simulation) changeSymbols() []state.Symbol {
+	syms := make([]state.Symbol, 0, len(sim.Change))
+	for sym := range sim.Change {
+		syms = append(syms, sym)
+	}
+	return syms
+}
+
+func (sim *Simulation) inputSymbols() []state.Symbol {
+	if len(sim.Inputs) == 0 {
+		return []state.Symbol{}
+	}
+	syms := make([]state.Symbol, 0, len(sim.Inputs))
+	for sym := range sim.Inputs {
+		syms = append(syms, sym)
+	}
+	return syms
+}
