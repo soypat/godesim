@@ -1,4 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/soypat/godesim)](https://goreportcard.com/report/github.com/soypat/godesim)
+[![go.dev reference](https://pkg.go.dev/badge/github.com/soypat/godesim)](https://pkg.go.dev/github.com/soypat/godesim)
 
 # godesim
 
