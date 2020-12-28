@@ -33,6 +33,7 @@ type Simulation struct {
 	Solver      func(sim *Simulation) []state.State
 	Change      map[state.Symbol]state.Changer
 	Inputs      map[state.Symbol]state.Input
+	ParseEvents func(state.State) []Event
 	Config
 }
 
@@ -79,6 +80,7 @@ func (sim *Simulation) SetConfig(cfg Config) *Simulation {
 func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
 	sim.verifyPreBegin()
+	sim.setInputs()
 
 	sim.results = make([]state.State, 0, sim.Algorithm.Steps*sim.Len())
 	sim.results = append(sim.results, sim.State)
@@ -89,6 +91,7 @@ func (sim *Simulation) Begin() {
 		states = sim.Solver(sim)
 		sim.results = append(sim.results, states[1:]...)
 		sim.State = states[len(states)-1]
+		sim.setInputs()
 		if sim.Log.Results {
 			fmt.Printf("%v\n", sim.State)
 		}

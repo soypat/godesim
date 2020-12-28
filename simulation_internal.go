@@ -91,3 +91,12 @@ func (sim *Simulation) inputSymbols() []state.Symbol {
 	}
 	return syms
 }
+
+func (sim *Simulation) setInputs() {
+	if len(sim.Inputs) == 0 {
+		return
+	}
+	for sym, f := range sim.Inputs {
+		sim.State.USet(sym, f(sim.State))
+	}
+}
