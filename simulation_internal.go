@@ -1,10 +1,10 @@
-package simulation
+package godesim
 
 import (
 	"fmt"
 	"math"
 
-	"github.com/go-sim/simulation/state"
+	"github.com/soypat/godesim/state"
 	"gonum.org/v1/gonum/floats"
 )
 

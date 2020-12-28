@@ -1,4 +1,4 @@
-package simulation_test
+package godesim_test
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/go-sim/simulation"
-	"github.com/go-sim/simulation/state"
+	"github.com/soypat/godesim/state"
 )
 
 func TestQuadratic(t *testing.T) {

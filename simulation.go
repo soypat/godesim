@@ -1,20 +1,20 @@
-// Simulation can be described as a simple interface
+// Godesim can be described as a simple interface
 // to solve a system of non-linear differential equations
 // which can be defined as Go code.
 //
-// Why Simulation?
+// Why Godesim?
 //
 // ODE solvers seem to fill the niche of simple system solvers in
 // your numerical packages such as scipy's odeint/solve_ivp. Among these integrators there
 // seems to be room for a solver that offers simulation interactivity such as modifying
 // the differential equations during simulation based on events such as a rocket stage separation.
-package simulation
+package godesim
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/go-sim/simulation/state"
+	"github.com/soypat/godesim/state"
 	"gonum.org/v1/gonum/floats"
 )
 
