@@ -74,7 +74,7 @@ func (s State) Time() float64 {
 	return s.time
 }
 
-// TimeSet set domain variable (default time)
+// SetTime set domain variable (default time)
 func (s *State) SetTime(t float64) {
 	s.time = t
 }
@@ -97,7 +97,7 @@ func (s *State) XSet(sym Symbol, val float64) {
 	s.XEqual(sym, val)
 }
 
-// XEqual Set a State Symbol to a value.
+// UEqual Set a State Input (U) Symbol to a value.
 //
 // If Symbol does not exist then it is created
 func (s *State) UEqual(sym Symbol, val float64) {

@@ -1,4 +1,4 @@
-// Godesim can be described as a simple interface
+// Package godesim can be described as a simple interface
 // to solve a system of non-linear differential equations
 // which can be defined as Go code.
 //
@@ -37,6 +37,8 @@ type Simulation struct {
 	Config
 }
 
+// Config modifies Simulation behaviour/output.
+// Set with simulation.SetConfig method
 type Config struct {
 	Domain state.Symbol `yaml:"domain"`
 	Log    struct {
@@ -69,6 +71,7 @@ func New() *Simulation {
 	return &sim
 }
 
+// SetConfig Set configuration to modify default Simulation values
 func (sim *Simulation) SetConfig(cfg Config) *Simulation {
 	sim.Config = cfg
 	return sim
@@ -153,7 +156,7 @@ func (sim *Simulation) SetChangeMap(m map[state.Symbol]state.Changer) {
 	sim.Change = m
 }
 
-// SetChangeMap Sets U functions with pre-built map
+// SetInputMap Sets Input (U) functions with pre-built map
 func (sim *Simulation) SetInputMap(m map[state.Symbol]state.Input) {
 	sim.Inputs = m
 }

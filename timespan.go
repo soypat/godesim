@@ -31,13 +31,13 @@ func (ts Timespan) TimeVector() []float64 {
 }
 
 // SetTimespan Set time domain (step domain) for simulation
-func (tspan *Timespan) SetTimespan(Start, End float64, Steps int) {
-	(*tspan) = newTimespan(Start, End, Steps)
+func (ts *Timespan) SetTimespan(Start, End float64, Steps int) {
+	(*ts) = newTimespan(Start, End, Steps)
 }
 
 // time returns time corresponding to step in Timespan.
-func (tspan Timespan) time(Step int) float64 {
-	return float64(Step)*tspan.stepLength + tspan.start
+func (ts Timespan) time(Step int) float64 {
+	return float64(Step)*ts.stepLength + ts.start
 }
 
 // newTimespan generates a timespan object for simulation

@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/soypat/godesim)](https://goreportcard.com/report/github.com/soypat/godesim)
+
 # godesim
 
 Simulate complex systems with a simple API.
