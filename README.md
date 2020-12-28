@@ -7,6 +7,15 @@ Simulate complex systems with a simple API.
 
 Wrangle non-linear differential equations while writing maintainable, simple code.
 
+## Installation
+
+Requires Go.
+
+```console
+go get github.com/soypat/godesim
+```
+## Examples
+
 ### ODE multivariable solver with super simple API
 
 
