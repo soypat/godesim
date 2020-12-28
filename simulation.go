@@ -79,7 +79,7 @@ func (sim *Simulation) SetConfig(cfg Config) *Simulation {
 
 // Begin starts simulation
 //
-// Unrecoverable errors will be printed as
+// Unrecoverable errors will panic. Warnings may be printed.
 func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
 	sim.verifyPreBegin()
