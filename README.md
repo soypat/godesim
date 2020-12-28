@@ -1,4 +1,4 @@
-# Simulation
+# godesim
 
 Simulate complex systems with a simple API.
 ---
