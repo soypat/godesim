@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/go-sim/simulation"
+	"github.com/soypat/godesim"
 	"github.com/soypat/godesim/state"
 )
 
@@ -18,7 +18,7 @@ func TestQuadratic(t *testing.T) {
 	DDtheta := func(s state.State) float64 {
 		return 1
 	}
-	sim := simulation.New()
+	sim := godesim.New()
 	sim.SetChangeMap(map[state.Symbol]state.Changer{
 		"theta":  Dtheta,
 		"Dtheta": DDtheta,
@@ -47,7 +47,7 @@ func TestQuadratic(t *testing.T) {
 //  Dtheta     = theta_dot
 //  Dtheta_dot = 1
 func Example_quadratic() {
-	sim := simulation.New()
+	sim := godesim.New()
 	sim.SetChangeMap(map[state.Symbol]state.Changer{
 		"theta": func(s state.State) float64 {
 			return s.X("theta-dot")
