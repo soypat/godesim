@@ -86,3 +86,10 @@ for the domain `t=0` to `t=1.0` in 10 steps where `theta` and `theta-dot` are th
 t := sim.Results("time")
 theta := sim.Results("theta")
 ```
+
+## Contributing
+
+Pull requests welcome!
+
+This is my first library written for any programming language ever. I'll try to be fast on replying to pull-requests and issues. 
+
