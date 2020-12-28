@@ -15,6 +15,27 @@ Requires Go.
 ```console
 go get github.com/soypat/godesim
 ```
+
+## Progress
+
+Godesim is in early development and will naturally change as it is used more.
+ The chart below shows some features that are planned or already part of godesim.
+
+| Status legend | Planned | Started | Prototype | Mature |
+| ------------- |:-------:|:-------:|:---------:|:------:|
+| Legend symbol |    ✖️    |    🏗️   |     🐞️    |   ✅️   |
+
+| Features | Status | Notes |
+| -------- |:------:| ----- |
+| Non-linear solver | 🐞️ | First implementation done. Needs more unit testing. |
+| Event driver | ✖️ | Ability to change simulation behaviour during run. i.e: step size, equations used. |
+| Stiff solver | ✖️ | Only have RK4 solver for now. |
+
+
+
+
+
+
 ## Examples
 
 ### ODE multivariable solver with super simple API
