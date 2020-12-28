@@ -97,6 +97,6 @@ func (sim *Simulation) setInputs() {
 		return
 	}
 	for sym, f := range sim.Inputs {
-		sim.State.USet(sym, f(sim.State))
+		sim.State.UEqual(sym, f(sim.State))
 	}
 }
