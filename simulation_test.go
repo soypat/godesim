@@ -32,12 +32,12 @@ func TestQuadratic(t *testing.T) {
 	sim.Begin()
 
 	time, x_res := sim.Results("time"), sim.Results("theta")
-	x_quad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v })
+	x_quad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
 	if len(time) != N_steps+1 {
 		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
 	}
 	for i := range x_quad {
-		if math.Abs(x_quad[i]-x_res[i]) > 0.000001 {
+		if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
 			t.Errorf("incorrect curve profile for test %s", t.Name())
 		}
 	}
@@ -66,12 +66,12 @@ func TestSimpleInput(t *testing.T) {
 	sim.Begin()
 
 	time, x_res := sim.Results("time"), sim.Results("theta")
-	x_quad := applyFunc(time, func(v float64) float64 { return v })
+	x_quad := applyFunc(time, func(v float64) float64 { return v /* solution is theta(t) = t*/ })
 	if len(time) != N_steps+1 {
 		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
 	}
 	for i := range x_quad {
-		if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()*float64(i), 4) {
+		if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
 			t.Errorf("incorrect curve profile for test %s", t.Name())
 		}
 	}
