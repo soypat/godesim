@@ -32,7 +32,7 @@ type Input func(State) float64
 
 // New creates empty state
 func New() State {
-	s := State{varmap: make(map[Symbol]int)}
+	s := State{varmap: make(map[Symbol]int), inputmap: make(map[Symbol]int)}
 	// s.x, s.u = make([]float64, 0), make([]float64, 0)
 	return s
 }
@@ -127,13 +127,13 @@ func (s State) Clone() State {
 }
 
 // CloneBlank creates a duplicate of state
-// with all X and U vectors set to zero value
+// with all X vector set to zero value
 func (s State) CloneBlank() State {
 	return State{
 		varmap:   s.varmap,
 		x:        make([]float64, len(s.x)),
 		inputmap: s.inputmap,
-		u:        make([]float64, len(s.u)),
+		u:        s.UVector(),
 		time:     s.time,
 	}
 }

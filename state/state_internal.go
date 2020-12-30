@@ -10,6 +10,9 @@ func (s *State) xCreateIfNotExist(sym Symbol) {
 }
 
 func (s *State) uCreateIfNotExist(sym Symbol) {
+	if len(s.u) == 0 {
+		s.u = make([]float64, 0, 1)
+	}
 	if _, ok := s.inputmap[sym]; !ok {
 		s.u = append(s.u, 0)
 		s.inputmap[sym] = len(s.u) - 1

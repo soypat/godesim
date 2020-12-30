@@ -38,9 +38,44 @@ func TestQuadratic(t *testing.T) {
 	}
 	for i := range x_quad {
 		if math.Abs(x_quad[i]-x_res[i]) > 0.000001 {
-			t.Errorf("Resulting curve not quadratic")
+			t.Errorf("incorrect curve profile for test %s", t.Name())
 		}
 	}
+}
+
+func TestSimpleInput(t *testing.T) {
+	Dtheta := func(s state.State) float64 {
+		return s.U("u")
+	}
+
+	inputVar := func(s state.State) float64 {
+		return 1
+	}
+	sim := godesim.New()
+	sim.SetChangeMap(map[state.Symbol]state.Changer{
+		"theta": Dtheta,
+	})
+	sim.SetX0FromMap(map[state.Symbol]float64{
+		"theta": 0,
+	})
+	sim.SetInputMap(map[state.Symbol]state.Input{
+		"u": inputVar,
+	})
+	const N_steps = 5
+	sim.SetTimespan(0.0, 1, N_steps)
+	sim.Begin()
+
+	time, x_res := sim.Results("time"), sim.Results("theta")
+	x_quad := applyFunc(time, func(v float64) float64 { return v })
+	if len(time) != N_steps+1 {
+		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+	}
+	for i := range x_quad {
+		if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()*float64(i), 4) {
+			t.Errorf("incorrect curve profile for test %s", t.Name())
+		}
+	}
+
 }
 
 // Solves a simple system of equations of the form

@@ -82,8 +82,8 @@ func (sim *Simulation) SetConfig(cfg Config) *Simulation {
 // Unrecoverable errors will panic. Warnings may be printed.
 func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
-	sim.verifyPreBegin()
 	sim.setInputs()
+	sim.verifyPreBegin()
 
 	sim.results = make([]state.State, 0, sim.Algorithm.Steps*sim.Len())
 	sim.results = append(sim.results, sim.State)
