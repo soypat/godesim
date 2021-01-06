@@ -40,7 +40,7 @@ func (ts Timespan) time(Step int) float64 {
 	return float64(Step)*ts.stepLength + ts.start
 }
 
-// newTimespan generates a timespan object for simulation
+// newTimespan generates a timespan object for simulation.
 // Steps must be minimum 1.
 func newTimespan(Start, End float64, Steps int) Timespan {
 

@@ -27,7 +27,6 @@ import (
 type Simulation struct {
 	Timespan
 	State         state.State
-	currentTime   float64
 	currentStep   int
 	results       []state.State
 	Solver        func(sim *Simulation) []state.State
@@ -99,6 +98,18 @@ func (sim *Simulation) Begin() {
 			fmt.Printf("%v\n", sim.State)
 		}
 		time.Sleep(sim.Behaviour.StepDelay)
+		if sim.eventHandlers != nil && len(sim.eventHandlers) > 0 {
+			for _, handler := range sim.eventHandlers {
+				ev := handler(sim.State)
+				if ev.EventKind == EvNone {
+					continue
+				}
+				if ev.EventKind == EvEndSimulation {
+					sim.currentStep = -1
+				}
+				sim.applyEvent(ev)
+			}
+		}
 	}
 }
 
@@ -107,7 +118,7 @@ func (sim *Simulation) Begin() {
 func RK4Solver(sim *Simulation) []state.State {
 	const overSix = 0.166666666666666666666667
 	states := make([]state.State, sim.Algorithm.Steps+1)
-	dt := sim.Dt()
+	dt := sim.Dt() / float64(sim.Algorithm.Steps)
 	states[0] = sim.State.Clone()
 	for i := 0; i < len(states)-1; i++ {
 		// create auxiliary states for calculation

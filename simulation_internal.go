@@ -70,6 +70,9 @@ func (sim *Simulation) verify() {
 
 // will contain heavy logic in future. event oriented stuff to come
 func (sim *Simulation) isRunning() bool {
+	if sim.currentStep < 0 {
+		return false
+	}
 	return sim.Timespan.end > sim.State.Time()+sim.Dt()*.9
 }
 
@@ -99,4 +102,26 @@ func (sim *Simulation) setInputs() {
 	for sym, f := range sim.inputs {
 		sim.State.UEqual(sym, f(sim.State))
 	}
+}
+
+func (sim *Simulation) applyEvent(ev *Event) error {
+	switch ev.EventKind {
+	case EvStepLength:
+		steps := math.Ceil((sim.end - sim.CurrentTime()) / ev.newDomain.Dt())
+		sim.Timespan = newTimespan(sim.CurrentTime(), sim.end, int(steps))
+	case EvError:
+		return ev
+	case EvBehaviour:
+		for i, sym := range ev.targets {
+			if _, ok := sim.change[state.Symbol(sym)]; ok {
+				sim.change[state.Symbol(sym)] = ev.functions[i]
+			}
+			if _, ok := sim.inputs[state.Symbol(sym)]; ok {
+				sim.inputs[state.Symbol(sym)] = ev.functions[i]
+				continue
+			}
+			throwf("Simulation: applying event for %s, does not exist in variables or inputs", sym)
+		}
+	}
+	return nil
 }

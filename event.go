@@ -14,14 +14,18 @@ type Event struct {
 type EventKind int
 
 // EventHandler takes a state and returns events if any happened
-type EventHandler func(state.State) Event
+type EventHandler func(state.State) *Event
 
 // Belongs to the enum of Event types (EventKind)
 const (
-	EvUndefined EventKind = iota
+	// The None event has no effect on simulation
+	EvNone EventKind = iota
+	EvEndSimulation
 	EvBehaviour
 	EvMarker
+	EvStepLength
 	EvDomainChange
+	EvError
 	// Not implemented
 	EvDelay
 )
@@ -34,12 +38,18 @@ func NewEvent(kind EventKind) *Event {
 	case EvBehaviour:
 		ev.targets = make([]string, 0)
 		ev.functions = make([]func(state.State) float64, 0)
+	case EvError:
+		ev.targets = make([]string, 0, 1)
 	case EvMarker:
 		// pass
-	case EvDomainChange:
+	case EvEndSimulation:
+		// pass
+	case EvDomainChange, EvStepLength:
 		// pass
 	case EvDelay:
-		throwf("Delayed event not implemented yet")
+		throwf("NewEvent: delayed event not implemented yet")
+	default:
+		throwf("NewEvent: unexpected event kind")
 	}
 	return ev
 }
@@ -57,5 +67,16 @@ func (ev *Event) SetBehaviour(m map[state.Symbol]func(state.State) float64) {
 
 // SetDomain for EvDomainChange: Takes new Domain (timespan) for simulation
 func (ev *Event) SetDomain(start, end float64, steps int) {
+	throwf("SetDomain not implemented yet")
 	ev.newDomain = newTimespan(start, end, steps)
+}
+
+// SetStepLength for EvStepLength: Set simulation steplength
+func (ev *Event) SetStepLength(stepLength float64) {
+	ev.newDomain = newTimespan(0, stepLength, 1)
+}
+
+// Error implements Error interface for user defined simulation errors
+func (ev Event) Error() string {
+	return ev.targets[0]
 }
