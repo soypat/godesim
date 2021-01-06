@@ -10,7 +10,6 @@ import (
 )
 
 func TestQuadratic(t *testing.T) {
-
 	Dtheta := func(s state.State) float64 {
 		return s.X("Dtheta")
 	}

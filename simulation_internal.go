@@ -74,29 +74,29 @@ func (sim *Simulation) isRunning() bool {
 }
 
 func (sim *Simulation) changeSymbols() []state.Symbol {
-	syms := make([]state.Symbol, 0, len(sim.Change))
-	for sym := range sim.Change {
+	syms := make([]state.Symbol, 0, len(sim.change))
+	for sym := range sim.change {
 		syms = append(syms, sym)
 	}
 	return syms
 }
 
 func (sim *Simulation) inputSymbols() []state.Symbol {
-	if len(sim.Inputs) == 0 {
+	if len(sim.inputs) == 0 {
 		return []state.Symbol{}
 	}
-	syms := make([]state.Symbol, 0, len(sim.Inputs))
-	for sym := range sim.Inputs {
+	syms := make([]state.Symbol, 0, len(sim.inputs))
+	for sym := range sim.inputs {
 		syms = append(syms, sym)
 	}
 	return syms
 }
 
 func (sim *Simulation) setInputs() {
-	if len(sim.Inputs) == 0 {
+	if len(sim.inputs) == 0 {
 		return
 	}
-	for sym, f := range sim.Inputs {
+	for sym, f := range sim.inputs {
 		sim.State.UEqual(sym, f(sim.State))
 	}
 }

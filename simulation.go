@@ -26,14 +26,14 @@ import (
 // of differential equations
 type Simulation struct {
 	Timespan
-	State       state.State
-	currentTime float64
-	currentStep int
-	results     []state.State
-	Solver      func(sim *Simulation) []state.State
-	Change      map[state.Symbol]state.Changer
-	Inputs      map[state.Symbol]state.Input
-	ParseEvents func(state.State) []Event
+	State         state.State
+	currentTime   float64
+	currentStep   int
+	results       []state.State
+	Solver        func(sim *Simulation) []state.State
+	change        map[state.Symbol]state.Changer
+	inputs        map[state.Symbol]state.Input
+	eventHandlers []EventHandler
 	Config
 }
 
@@ -64,7 +64,7 @@ type Config struct {
 //  simulation.Algorithm.Steps
 func New() *Simulation {
 	sim := Simulation{
-		Change: make(map[state.Symbol]state.Changer),
+		change: make(map[state.Symbol]state.Changer),
 		Solver: RK4Solver,
 	}
 	sim.Domain, sim.Algorithm.Steps = "time", 1
@@ -112,15 +112,15 @@ func RK4Solver(sim *Simulation) []state.State {
 	for i := 0; i < len(states)-1; i++ {
 		// create auxiliary states for calculation
 		b, c, d := states[i].CloneBlank(), states[i].CloneBlank(), states[i].CloneBlank()
-		a := StateDiff(sim.Change, states[i])
+		a := StateDiff(sim.change, states[i])
 		aaux := a.Clone()
-		b = StateDiff(sim.Change, state.AddTo(b, states[i],
+		b = StateDiff(sim.change, state.AddTo(b, states[i],
 			state.ScaleTo(aaux, 0.5*dt, aaux)))
 		baux := b.Clone()
-		c = StateDiff(sim.Change, state.AddTo(c, states[i],
+		c = StateDiff(sim.change, state.AddTo(c, states[i],
 			state.ScaleTo(baux, 0.5*dt, baux)))
 		caux := c.Clone()
-		d = StateDiff(sim.Change, state.AddTo(d, states[i],
+		d = StateDiff(sim.change, state.AddTo(d, states[i],
 			state.ScaleTo(caux, dt, caux)))
 		state.Add(a, d)
 		state.Add(b, c)
@@ -153,12 +153,12 @@ func (sim *Simulation) SetX0FromMap(m map[state.Symbol]float64) {
 //  	},
 //  })
 func (sim *Simulation) SetChangeMap(m map[state.Symbol]state.Changer) {
-	sim.Change = m
+	sim.change = m
 }
 
 // SetInputMap Sets Input (U) functions with pre-built map
 func (sim *Simulation) SetInputMap(m map[state.Symbol]state.Input) {
-	sim.Inputs = m
+	sim.inputs = m
 }
 
 // CurrentTime obtain simulation step variable
