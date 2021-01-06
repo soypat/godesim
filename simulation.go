@@ -107,7 +107,10 @@ func (sim *Simulation) Begin() {
 				if ev.EventKind == EvEndSimulation {
 					sim.currentStep = -1
 				}
-				sim.applyEvent(ev)
+				err := sim.applyEvent(ev)
+				if err != nil {
+					fmt.Println("error in simulation: ", err)
+				}
 			}
 		}
 	}
@@ -216,4 +219,14 @@ func StateDiff(F map[state.Symbol]state.Changer, S state.State) state.State {
 		diff.XEqual(syms[i], F[syms[i]](S))
 	}
 	return diff
+}
+
+func (sim *Simulation) AddEvents(evhand ...EventHandler) {
+	if len(evhand) == 0 {
+		throwf("AddEvents: can't have 0 event handlers")
+	}
+	if sim.eventHandlers == nil {
+		sim.eventHandlers = make([]EventHandler, 0, len(evhand))
+	}
+	sim.eventHandlers = append(sim.eventHandlers, evhand...)
 }

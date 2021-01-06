@@ -35,6 +35,8 @@ func NewEvent(kind EventKind) *Event {
 	ev := new(Event)
 	ev.EventKind = kind
 	switch kind {
+	case EvNone:
+		return ev
 	case EvBehaviour:
 		ev.targets = make([]string, 0)
 		ev.functions = make([]func(state.State) float64, 0)
