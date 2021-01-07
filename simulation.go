@@ -92,7 +92,7 @@ func (sim *Simulation) Begin() {
 		}
 		time.Sleep(sim.Behaviour.StepDelay)
 		if sim.eventHandlers != nil && len(sim.eventHandlers) > 0 {
-			for i := range sim.eventHandlers {
+			for i := 0; i < len(sim.eventHandlers); i++ {
 				handler := sim.eventHandlers[i]
 				if handler == &IdleHandler { // if idler, remove and continue
 					sim.eventHandlers = append(sim.eventHandlers[:i], sim.eventHandlers[i+1:]...)
