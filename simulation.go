@@ -232,8 +232,8 @@ func (sim *Simulation) AddEvents(evhand ...EventHandler) {
 	if sim.eventHandlers == nil {
 		sim.eventHandlers = make([]*EventHandler, 0, len(evhand))
 	}
-	for _, h := range evhand {
-		sim.eventHandlers = append(sim.eventHandlers, &h)
+	for i := range evhand {
+		sim.eventHandlers = append(sim.eventHandlers, &evhand[i])
 	}
 
 }
