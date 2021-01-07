@@ -82,3 +82,8 @@ func (ev *Event) SetStepLength(stepLength float64) {
 func (ev Event) Error() string {
 	return ev.targets[0]
 }
+
+// IdleHandler does nothing. If in a running simulation an IdleHandler will be discarded
+var IdleHandler EventHandler = func(s state.State) *Event {
+	return NewEvent(EvNone)
+}

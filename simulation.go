@@ -1,13 +1,6 @@
 // Package godesim can be described as a simple interface
-// to solve a system of non-linear differential equations
+// to solve a first-order system of non-linear differential equations
 // which can be defined as Go code.
-//
-// Why Godesim?
-//
-// ODE solvers seem to fill the niche of simple system solvers in
-// your numerical packages such as scipy's odeint/solve_ivp. Among these integrators there
-// seems to be room for a solver that offers simulation interactivity such as modifying
-// the differential equations during simulation based on events such as a rocket stage separation.
 package godesim
 
 import (
@@ -32,7 +25,7 @@ type Simulation struct {
 	Solver        func(sim *Simulation) []state.State
 	change        map[state.Symbol]state.Changer
 	inputs        map[state.Symbol]state.Input
-	eventHandlers []EventHandler
+	eventHandlers []*EventHandler
 	Config
 }
 
@@ -99,8 +92,14 @@ func (sim *Simulation) Begin() {
 		}
 		time.Sleep(sim.Behaviour.StepDelay)
 		if sim.eventHandlers != nil && len(sim.eventHandlers) > 0 {
-			for _, handler := range sim.eventHandlers {
-				ev := handler(sim.State)
+			for i := range sim.eventHandlers {
+				handler := sim.eventHandlers[i]
+				if handler == &IdleHandler { // if idler, remove and continue
+					sim.eventHandlers = append(sim.eventHandlers[:i], sim.eventHandlers[i+1:]...)
+					i--
+					continue
+				}
+				ev := (*handler)(sim.State)
 				if ev.EventKind == EvNone {
 					continue
 				}
@@ -111,6 +110,7 @@ func (sim *Simulation) Begin() {
 				if err != nil {
 					fmt.Println("error in simulation: ", err)
 				}
+				sim.eventHandlers[i] = &IdleHandler
 			}
 		}
 	}
@@ -126,6 +126,9 @@ func RK4Solver(sim *Simulation) []state.State {
 	for i := 0; i < len(states)-1; i++ {
 		// create auxiliary states for calculation
 		b, c, d := states[i].CloneBlank(), states[i].CloneBlank(), states[i].CloneBlank()
+		b.SetTime(b.Time() + dt/2)
+		c.SetTime(c.Time() + dt/2)
+		d.SetTime(d.Time() + dt)
 		a := StateDiff(sim.change, states[i])
 		aaux := a.Clone()
 		b = StateDiff(sim.change, state.AddTo(b, states[i],
@@ -221,12 +224,16 @@ func StateDiff(F map[state.Symbol]state.Changer, S state.State) state.State {
 	return diff
 }
 
+// AddEvents add event handlers to simulation.
 func (sim *Simulation) AddEvents(evhand ...EventHandler) {
 	if len(evhand) == 0 {
 		throwf("AddEvents: can't have 0 event handlers")
 	}
 	if sim.eventHandlers == nil {
-		sim.eventHandlers = make([]EventHandler, 0, len(evhand))
+		sim.eventHandlers = make([]*EventHandler, 0, len(evhand))
 	}
-	sim.eventHandlers = append(sim.eventHandlers, evhand...)
+	for _, h := range evhand {
+		sim.eventHandlers = append(sim.eventHandlers, &h)
+	}
+
 }

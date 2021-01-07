@@ -8,6 +8,14 @@ Simulate complex systems with a simple API.
 
 Wrangle non-linear differential equations while writing maintainable, simple code.
 
+## Why Godesim?
+
+ODE solvers seem to fill the niche of simple system solvers in
+your numerical packages such as scipy's odeint/solve_ivp. 
+
+Among these integrators there seems to be room for a solver that offers simulation interactivity such as modifying
+the differential equations during simulation based on events such as a rocket stage separation.
+
 ## Installation
 
 Requires Go.
@@ -21,15 +29,15 @@ go get github.com/soypat/godesim
 Godesim is in early development and will naturally change as it is used more.
  The chart below shows some features that are planned or already part of godesim.
 
-| Status legend | Planned | Started | Prototype | Mature |
-| ------------- |:-------:|:-------:|:---------:|:------:|
-| Legend symbol |    ✖️    |    🏗️   |     🐞️    |   ✅️   |
+| Status legend | Planned | Started | Prototype | Stable | Mature |
+| ------------- |:-------:|:-------:|:---------:|:------:|:------:|
+| Legend symbol |    ✖️    |    🏗️   |     🐞️    |   🚦️   |   ✅️   |
 
 | Features | Status | Notes |
 | -------- |:------:| ----- |
-| Non-linear solver | 🐞️ | First implementation done. Needs more unit testing. |
-| Non-autonomous support | 🐞️ | `U` vector which need not a defined change equation like `X` does.|
-| Event driver | ✖️ | Ability to change simulation behaviour during run. i.e: step size, equations used. |
+| Non-linear solver | 🚦️ | First implementation done. Ready to be used. |
+| Non-autonomous support | 🚦️ | `U` vector which need not a defined change equation like `X` does.|
+| Event driver | 🐞️ | Ability to change simulation behaviour during run. i.e: step size, equations used. |
 | Stiff solver | ✖️ | Only have RK4 solver for now. |
 
 

@@ -115,6 +115,7 @@ func (sim *Simulation) applyEvent(ev *Event) error {
 		for i, sym := range ev.targets {
 			if _, ok := sim.change[state.Symbol(sym)]; ok {
 				sim.change[state.Symbol(sym)] = ev.functions[i]
+				continue
 			}
 			if _, ok := sim.inputs[state.Symbol(sym)]; ok {
 				sim.inputs[state.Symbol(sym)] = ev.functions[i]
