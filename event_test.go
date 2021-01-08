@@ -123,3 +123,70 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 		}
 	}
 }
+
+func TestMultiEvent(t *testing.T) {
+	Dtheta1 := func(s state.State) float64 {
+		return 6 * s.Time()
+	}
+
+	sim := godesim.New()
+	sim.SetChangeMap(map[state.Symbol]state.Changer{
+		"theta":     func(s state.State) float64 { return s.X("theta-dot") },
+		"theta-dot": Dtheta1,
+	})
+	sim.SetX0FromMap(map[state.Symbol]float64{
+		"theta":     0,
+		"theta-dot": 0,
+	})
+	const ti, tf, N_steps = 0.0, 3, 15
+	sim.SetTimespan(ti, tf, N_steps)
+	stepOriginal := sim.Dt()
+	stepNew := 0.5 * stepOriginal
+	tStepRefine := 1.
+	tNewEndSim := 2.
+	sim.AddEvents(
+		func(s state.State) *godesim.Event {
+			if s.Time() >= tNewEndSim {
+				return godesim.NewEvent(godesim.EvEndSimulation)
+			}
+			return godesim.NewEvent(godesim.EvNone)
+		},
+		// Augment step size after vehicle runs out of fuel
+		func(s state.State) *godesim.Event {
+			if s.Time() >= tStepRefine {
+				ev := godesim.NewEvent(godesim.EvStepLength)
+				ev.SetStepLength(stepNew)
+				return ev
+			}
+			return godesim.NewEvent(godesim.EvNone)
+		},
+	)
+	sim.Begin()
+
+	time, x_res := sim.Results("time"), sim.Results("theta")
+
+	x_expected := applyFunc(time, func(v float64) float64 { return math.Pow(v, 3) })
+	if len(time) != len(x_res) {
+		t.Error("length of time and theta vectors should be the same")
+		t.FailNow()
+	}
+	if math.Abs(time[len(time)-1]-tNewEndSim) > 1e-12 {
+		t.Errorf("simulation end event not triggered at domain point. Expected %.3f, got %.3f", tNewEndSim, time[len(time)-1])
+	}
+	for i := range time {
+		diff := x_res[i] - x_expected[i]
+		if math.Abs(diff) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+			t.Errorf("incorrect curve profile for test %s. t=%.2f Expected %.4f, got %.4f", t.Name(), time[i], x_expected[i], x_res[i])
+		}
+		if i == 0 {
+			continue
+		}
+		dt, tm := time[i]-time[i-1], time[i]
+		if tm <= tStepRefine && math.Abs(dt-stepOriginal) > 1e-12 {
+			t.Errorf("steplength event triggered before its time")
+		}
+		if tm > tStepRefine && math.Abs(dt-stepNew) > 1e-12 {
+			t.Errorf("steplength event not applied. expected dt=%.4f, got dt=%.4f", stepNew, dt)
+		}
+	}
+}
