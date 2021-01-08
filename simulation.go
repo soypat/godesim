@@ -119,7 +119,7 @@ func (sim *Simulation) Begin() {
 // RK4Solver Integrates simulation state for next timesteps
 // using 4th order Runge-Kutta multivariable algorithm
 func RK4Solver(sim *Simulation) []state.State {
-	const overSix = 0.166666666666666666666667
+	const overSix float64 = 1. / 6.
 	states := make([]state.State, sim.Algorithm.Steps+1)
 	dt := sim.Dt() / float64(sim.Algorithm.Steps)
 	states[0] = sim.State.Clone()
