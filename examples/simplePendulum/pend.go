@@ -58,9 +58,9 @@ func run() {
 
 		imd := imdraw.New(nil)
 		imd.Color = color.Black
-		imd.Push(pixel.ZV)
+		imd.Push(pixel.V(512, 768/2))
+		imd.Circle(20, 0)
 
 		win.Update()
 	}
-
 }
