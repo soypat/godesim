@@ -26,6 +26,7 @@ type Simulation struct {
 	change        map[state.Symbol]state.Changer
 	inputs        map[state.Symbol]state.Input
 	eventHandlers []*EventHandler
+	events        []*Event
 	Config
 }
 
@@ -79,6 +80,7 @@ func (sim *Simulation) Begin() {
 
 	sim.results = make([]state.State, 0, sim.Algorithm.Steps*sim.Len())
 	sim.results = append(sim.results, sim.State)
+	sim.events = make([]*Event, 0, len(sim.eventHandlers))
 
 	var states []state.State
 	for sim.isRunning() {
@@ -100,13 +102,20 @@ func (sim *Simulation) Begin() {
 					continue
 				}
 				ev := (*handler)(sim.State)
-				if ev.EventKind == EvNone {
+				if ev == nil || ev.EventKind == EvNone {
+					continue
+				}
+				sim.events = append(sim.events, ev)
+				if ev.EventKind == EvRemove {
+					sim.eventHandlers = append(sim.eventHandlers[:i], sim.eventHandlers[i+1:]...)
+					i--
 					continue
 				}
 				if ev.EventKind == EvEndSimulation {
 					sim.currentStep = -1
 				}
 				err := sim.applyEvent(ev)
+
 				if err != nil {
 					fmt.Println("error in simulation: ", err)
 				}
@@ -224,10 +233,10 @@ func StateDiff(F map[state.Symbol]state.Changer, S state.State) state.State {
 	return diff
 }
 
-// AddEvents add event handlers to simulation.
-func (sim *Simulation) AddEvents(evhand ...EventHandler) {
+// AddEventHandlers add event handlers to simulation.
+func (sim *Simulation) AddEventHandlers(evhand ...EventHandler) {
 	if len(evhand) == 0 {
-		throwf("AddEvents: can't have 0 event handlers")
+		throwf("AddEventHandlers: can't add 0 event handlers")
 	}
 	if sim.eventHandlers == nil {
 		sim.eventHandlers = make([]*EventHandler, 0, len(evhand))
@@ -235,5 +244,13 @@ func (sim *Simulation) AddEvents(evhand ...EventHandler) {
 	for i := range evhand {
 		sim.eventHandlers = append(sim.eventHandlers, &evhand[i])
 	}
+}
 
+// Events Returns a copy of all simulation events
+func (sim *Simulation) Events() []Event {
+	ev := make([]Event, len(sim.events))
+	for i := range sim.events {
+		ev[i] = *sim.events[i]
+	}
+	return ev
 }

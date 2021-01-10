@@ -34,13 +34,13 @@ func TestStepLen(t *testing.T) {
 	initStepLen := sim.Dt()
 	newStepLen := initStepLen * 0.25
 	tswitch := 0.5
-	sim.AddEvents(func(s state.State) *godesim.Event {
+	sim.AddEventHandlers(func(s state.State) *godesim.Event {
 		if s.Time() >= tswitch {
-			ev := godesim.NewEvent(godesim.EvStepLength)
+			ev := godesim.NewEvent("refine", godesim.EvStepLength)
 			ev.SetStepLength(newStepLen)
 			return ev
 		}
-		return godesim.NewEvent(0)
+		return nil
 	})
 	sim.Begin()
 
@@ -89,15 +89,15 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 	const ti, tf, N_steps = 0.0, 2, 10
 	sim.SetTimespan(ti, tf, N_steps)
 	tswitch := 1.
-	sim.AddEvents(func(s state.State) *godesim.Event {
+	sim.AddEventHandlers(func(s state.State) *godesim.Event {
 		if s.Time() >= tswitch {
-			ev := godesim.NewEvent(godesim.EvBehaviour)
+			ev := godesim.NewEvent("change derivative", godesim.EvBehaviour)
 			ev.SetBehaviour(map[state.Symbol]func(state.State) float64{
 				"theta-dot": Dtheta2,
 			})
 			return ev
 		}
-		return godesim.NewEvent(0)
+		return nil
 	})
 	sim.Begin()
 
@@ -144,21 +144,21 @@ func TestMultiEvent(t *testing.T) {
 	stepNew := 0.5 * stepOriginal
 	tStepRefine := 1.
 	tNewEndSim := 2.
-	sim.AddEvents(
+	sim.AddEventHandlers(
 		func(s state.State) *godesim.Event {
 			if s.Time() >= tNewEndSim {
-				return godesim.NewEvent(godesim.EvEndSimulation)
+				return godesim.NewEvent("time up", godesim.EvEndSimulation)
 			}
-			return godesim.NewEvent(godesim.EvNone)
+			return nil
 		},
 		// Augment step size after vehicle runs out of fuel
 		func(s state.State) *godesim.Event {
 			if s.Time() >= tStepRefine {
-				ev := godesim.NewEvent(godesim.EvStepLength)
+				ev := godesim.NewEvent("refine", godesim.EvStepLength)
 				ev.SetStepLength(stepNew)
 				return ev
 			}
-			return godesim.NewEvent(godesim.EvNone)
+			return nil
 		},
 	)
 	sim.Begin()
