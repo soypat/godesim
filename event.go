@@ -69,6 +69,7 @@ func NewEvent(label string, kind EventKind) *Event {
 	return ev
 }
 
+// EventNone returns the EvNone kind Event
 func EventNone() *Event { return noneEvent }
 
 // SetBehaviour for EvBehaviour: Takes new state input/variable functions

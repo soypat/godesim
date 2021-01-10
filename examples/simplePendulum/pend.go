@@ -13,12 +13,12 @@ import (
 )
 
 // Declare simulation constants: gravity and pendulum length
-const g, L float64 = 9.8, 1. // m/s2, m
+const g, l float64 = 9.8, 1. // m/s2, m
 var sin, pi = math.Sin, math.Pi
 
 func main() {
 	Dthetadot := func(s state.State) float64 {
-		return -g / L * sin(s.X("theta"))
+		return -g / l * sin(s.X("theta"))
 	}
 
 	sim := godesim.New()
