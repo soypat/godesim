@@ -126,15 +126,15 @@ func (s State) Clone() State {
 	}
 }
 
-// CloneBlank creates a duplicate of state
+// CloneBlank creates a duplicate of state at time `t`
 // with all X vector set to zero value
-func (s State) CloneBlank() State {
+func (s State) CloneBlank(t float64) State {
 	return State{
 		varmap:   s.varmap,
 		x:        make([]float64, len(s.x)),
 		inputmap: s.inputmap,
 		u:        s.UVector(),
-		time:     s.time,
+		time:     t,
 	}
 }
 

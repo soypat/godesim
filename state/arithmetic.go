@@ -1,6 +1,18 @@
 package state
 
-import "gonum.org/v1/gonum/floats"
+import (
+	"math"
+
+	"gonum.org/v1/gonum/floats"
+)
+
+// Abs takes absolute value of elements in X variables
+// and stores the result in dst.
+func Abs(dst State) {
+	for i := range dst.x {
+		dst.x[i] = math.Abs(dst.x[i])
+	}
+}
 
 // Add adds, element-wise the X variables of state
 // s and dst and stores result in dst.

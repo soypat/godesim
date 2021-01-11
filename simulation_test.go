@@ -26,8 +26,10 @@ func TestQuadratic(t *testing.T) {
 		"theta":  0,
 		"Dtheta": 0,
 	})
-	const N_steps = 2
+	const N_steps = 10
+	sim.Solver = godesim.RKF45Solver
 	sim.SetTimespan(0.0, 1, N_steps)
+
 	sim.Begin()
 
 	time, x_res := sim.Results("time"), sim.Results("theta")

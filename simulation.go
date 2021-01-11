@@ -42,6 +42,13 @@ type Config struct {
 	} `yaml:"behaviour"`
 	Algorithm struct {
 		Steps int `yaml:"steps"`
+		Step  struct {
+			Max float64 `yaml:"max"`
+			Min float64 `yaml:"min"`
+		} `yaml:"step"`
+		Error struct {
+			Max float64 `yaml:"max"`
+		} `yaml:"error"`
 	} `yaml:"algorithm"`
 }
 
@@ -123,39 +130,6 @@ func (sim *Simulation) Begin() {
 			}
 		}
 	}
-}
-
-// RK4Solver Integrates simulation state for next timesteps
-// using 4th order Runge-Kutta multivariable algorithm
-func RK4Solver(sim *Simulation) []state.State {
-	const overSix float64 = 1. / 6.
-	states := make([]state.State, sim.Algorithm.Steps+1)
-	dt := sim.Dt() / float64(sim.Algorithm.Steps)
-	states[0] = sim.State.Clone()
-	for i := 0; i < len(states)-1; i++ {
-		// create auxiliary states for calculation
-		b, c, d := states[i].CloneBlank(), states[i].CloneBlank(), states[i].CloneBlank()
-		b.SetTime(b.Time() + dt/2)
-		c.SetTime(c.Time() + dt/2)
-		d.SetTime(d.Time() + dt)
-		a := StateDiff(sim.change, states[i])
-		aaux := a.Clone()
-		b = StateDiff(sim.change, state.AddTo(b, states[i],
-			state.ScaleTo(aaux, 0.5*dt, aaux)))
-		baux := b.Clone()
-		c = StateDiff(sim.change, state.AddTo(c, states[i],
-			state.ScaleTo(baux, 0.5*dt, baux)))
-		caux := c.Clone()
-		d = StateDiff(sim.change, state.AddTo(d, states[i],
-			state.ScaleTo(caux, dt, caux)))
-		state.Add(a, d)
-		state.Add(b, c)
-		state.AddScaled(a, 2, b)
-		states[i+1] = states[i].Clone()
-		state.AddScaled(states[i+1], dt*overSix, a)
-		states[i+1].SetTime(dt + states[i].Time())
-	}
-	return states
 }
 
 // SetX0FromMap sets simulation's initial X values from a Symbol map
