@@ -42,15 +42,15 @@ Godesim is in early development and will naturally change as it is used more.
 
 
 
-## [Examples](./examples)
+## [Examples](./_examples)
 
-To run an example, navigate to it's directory (under [`examples`](./examples)) then type `go run .` in console.
+To run an example, navigate to it's directory (under [`examples`](./_examples)) then type `go run .` in console.
 
 There are two simple examples which have been cooked under the  directory.
 I've been having problems running Pixel on my machine so the simulation animations are still under work.
 
-* [Simple pendulum](./examples/simplePendulum)
-* [Double pendulum exhibiting chaotic motion](./examples/doublePendulum)
+* [Simple pendulum](./_examples/simplePendulum)
+* [Double pendulum exhibiting chaotic motion](./_examples/doublePendulum)
 
 ## Imports
 
