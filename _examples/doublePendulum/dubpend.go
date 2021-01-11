@@ -35,7 +35,7 @@ func main() {
 	}
 	sim := godesim.New()
 
-	sim.SetChangeMap(map[state.Symbol]state.Changer{
+	sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 		"theta1": Dtheta1,
 		"mom1":   Dmom1,
 		"theta2": Dtheta2,

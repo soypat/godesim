@@ -19,10 +19,10 @@ type State struct {
 	time     float64
 }
 
-// Changer represents a single non-linear differential equation
+// Diff represents a single non-linear differential equation
 // of the Simulation's system of differential equation. Specifically, it
 // represents an X variable change.
-type Changer func(State) float64
+type Diff func(State) float64
 
 // Input represents a time-varying or table look-up variable/coefficient
 // of the Simulation's system of differential equations. Inputs can be used to

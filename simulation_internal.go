@@ -51,7 +51,7 @@ func (sim *Simulation) verify() {
 	if floats.HasNaN(consX) {
 		nanidx, _ := floats.Find([]int{}, math.IsNaN, consX, -1)
 		if len(nanidx) == 1 {
-			throwf("Simulation: : X State is inconsistent for %v. Match X Change with State Symbols", symsX[nanidx[0]])
+			throwf("Simulation: : X State is inconsistent for %v. Match X Diff with State Symbols", symsX[nanidx[0]])
 		} else {
 			throwf("Simulation: X State is inconsistent for %v and %d cases. Match X Change with State Symbols", symsX[nanidx[0]], len(nanidx)-1)
 		}

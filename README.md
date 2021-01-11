@@ -36,7 +36,7 @@ Godesim is in early development and will naturally change as it is used more.
 | Features | Status | Notes |
 | -------- |:------:| ----- |
 | Non-linear solver | 🚦️ | First implementation done. Ready to be used. |
-| Non-autonomous support | 🚦️ | `U` vector which need not a defined change equation like `X` does.|
+| Non-autonomous support | 🚦️ | `U` vector which need not a defined differential equation like `X` does.|
 | Event driver | 🐞️ | Ability to change simulation behaviour during run. i.e: step size, equations used. |
 | Stiff solver | 🏗️ | Added RKF45 solver. Adaptive timesteps next. Stiff solver still in planned phase. |
 
@@ -76,7 +76,7 @@ DDtheta := func(s state.State) float64 {
 }
 // Set the Simulation's differential equations and initial values and hit Begin!
 sim := godesim.New() // Configurable with Simulation.SetConfig(godesim.Config{...})
-sim.SetChangeMap(map[state.Symbol]state.Changer{
+sim.SetChangeMap(map[state.Symbol]state.Diff {
     "theta":  Dtheta,
     "theta-dot": DDtheta,
 })

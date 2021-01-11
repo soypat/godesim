@@ -22,7 +22,7 @@ func TestQuadratic(t *testing.T) {
 			return 1
 		}
 		sim := godesim.New()
-		sim.SetChangeMap(map[state.Symbol]state.Changer{
+		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta":  Dtheta,
 			"Dtheta": DDtheta,
 		})
@@ -59,13 +59,13 @@ func TestSimpleInput(t *testing.T) {
 			return 1
 		}
 		sim := godesim.New()
-		sim.SetChangeMap(map[state.Symbol]state.Changer{
+		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta": Dtheta,
 		})
 		sim.SetX0FromMap(map[state.Symbol]float64{
 			"theta": 0,
 		})
-		sim.SetInputMap(map[state.Symbol]state.Input{
+		sim.SetInputFromMap(map[state.Symbol]state.Input{
 			"u": inputVar,
 		})
 		sim.Solver = solver
@@ -92,7 +92,7 @@ func TestSimpleInput(t *testing.T) {
 //  Dtheta_dot = 1
 func Example_quadratic() {
 	sim := godesim.New()
-	sim.SetChangeMap(map[state.Symbol]state.Changer{
+	sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 		"theta": func(s state.State) float64 {
 			return s.X("theta-dot")
 		},

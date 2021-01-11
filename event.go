@@ -34,7 +34,7 @@ const (
 	EvEndSimulation
 	// Marks current time step with a string.
 	EvMarker
-	// Changes simulation state Change or Input. Must be set.
+	// Changes simulation state Diff or Input. Must be set.
 	EvBehaviour
 	// Defines a new step length. Must be set.
 	EvStepLength

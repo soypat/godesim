@@ -20,13 +20,13 @@ func TestStepLen(t *testing.T) {
 			return 1
 		}
 		sim := godesim.New()
-		sim.SetChangeMap(map[state.Symbol]state.Changer{
+		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta": Dtheta,
 		})
 		sim.SetX0FromMap(map[state.Symbol]float64{
 			"theta": 0,
 		})
-		sim.SetInputMap(map[state.Symbol]state.Input{
+		sim.SetInputFromMap(map[state.Symbol]state.Input{
 			"u": inputVar,
 		})
 		const N_steps, ti, tf = 10, 0.0, 1.0
@@ -82,7 +82,7 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 		}
 
 		sim := godesim.New()
-		sim.SetChangeMap(map[state.Symbol]state.Changer{
+		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta":     func(s state.State) float64 { return s.X("theta-dot") },
 			"theta-dot": Dtheta1,
 		})
@@ -137,7 +137,7 @@ func TestMultiEvent(t *testing.T) {
 		}
 
 		sim := godesim.New()
-		sim.SetChangeMap(map[state.Symbol]state.Changer{
+		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta":     func(s state.State) float64 { return s.X("theta-dot") },
 			"theta-dot": Dtheta1,
 		})

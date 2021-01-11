@@ -23,7 +23,7 @@ type Simulation struct {
 	currentStep   int
 	results       []state.State
 	Solver        func(sim *Simulation) []state.State
-	change        map[state.Symbol]state.Changer
+	change        map[state.Symbol]state.Diff
 	inputs        map[state.Symbol]state.Input
 	eventHandlers []*EventHandler
 	events        []*Event
@@ -64,7 +64,7 @@ type Config struct {
 //  simulation.Algorithm.Steps
 func New() *Simulation {
 	sim := Simulation{
-		change: make(map[state.Symbol]state.Changer),
+		change: make(map[state.Symbol]state.Diff),
 		Solver: RK4Solver,
 	}
 	sim.Domain, sim.Algorithm.Steps = "time", 1
@@ -140,11 +140,11 @@ func (sim *Simulation) SetX0FromMap(m map[state.Symbol]float64) {
 	}
 }
 
-// SetChangeMap Sets the ODE equations (change in X) with a pre-built map
+// SetDiffFromMap Sets the ODE equations (change in X) with a pre-built map
 //
 // i.e. theta(t) = 0.5 * t^2
 //
-//  sim.SetChangeMap(map[state.Symbol]state.Changer{
+//  sim.SetDiffFromMap(map[state.Symbol]state.Change{
 //  	"theta":  func(s state.State) float64 {
 //  		return s.X("Dtheta")
 //  	},
@@ -152,12 +152,12 @@ func (sim *Simulation) SetX0FromMap(m map[state.Symbol]float64) {
 //  		return 1
 //  	},
 //  })
-func (sim *Simulation) SetChangeMap(m map[state.Symbol]state.Changer) {
+func (sim *Simulation) SetDiffFromMap(m map[state.Symbol]state.Diff) {
 	sim.change = m
 }
 
-// SetInputMap Sets Input (U) functions with pre-built map
-func (sim *Simulation) SetInputMap(m map[state.Symbol]state.Input) {
+// SetInputFromMap Sets Input (U) functions with pre-built map
+func (sim *Simulation) SetInputFromMap(m map[state.Symbol]state.Input) {
 	sim.inputs = m
 }
 
@@ -193,9 +193,9 @@ func (sim *Simulation) Results(sym state.Symbol) []float64 {
 	return vec
 }
 
-// StateDiff obtain StateChanger results without modifying State
+// StateDiff obtain Change results without modifying State
 // Returns state evolution (result of applying Changer functions to S)
-func StateDiff(F map[state.Symbol]state.Changer, S state.State) state.State {
+func StateDiff(F map[state.Symbol]state.Diff, S state.State) state.State {
 	diff := S.Clone()
 	syms := S.XSymbols()
 	if len(F) != len(syms) {
