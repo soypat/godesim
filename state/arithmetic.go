@@ -68,7 +68,7 @@ func Max(s State) float64 {
 	return floats.Max(s.x)
 }
 
-// Min returns the maximum value of s
+// Min returns the minimum value of s
 func Min(s State) float64 {
 	return floats.Min(s.x)
 }
