@@ -63,6 +63,16 @@ func DivTo(dst, s, t State) State {
 	return dst
 }
 
+// Max returns the maximum value of s
+func Max(s State) float64 {
+	return floats.Max(s.x)
+}
+
+// Max returns the maximum value of s
+func Min(s State) float64 {
+	return floats.Min(s.x)
+}
+
 // Mul performs element-wise multiplication between dst
 // and s and stores the value in dst.
 // It panics if the argument lengths do not match.
