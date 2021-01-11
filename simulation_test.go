@@ -9,71 +9,79 @@ import (
 	"github.com/soypat/godesim/state"
 )
 
+// add all testable solvers here
+var gdsimSolvers = []func(*godesim.Simulation) []state.State{godesim.RK4Solver, godesim.RKF45Solver, godesim.RKF45TableauSolver}
+
 func TestQuadratic(t *testing.T) {
-	Dtheta := func(s state.State) float64 {
-		return s.X("Dtheta")
-	}
+	for _, solver := range gdsimSolvers {
+		Dtheta := func(s state.State) float64 {
+			return s.X("Dtheta")
+		}
 
-	DDtheta := func(s state.State) float64 {
-		return 1
-	}
-	sim := godesim.New()
-	sim.SetChangeMap(map[state.Symbol]state.Changer{
-		"theta":  Dtheta,
-		"Dtheta": DDtheta,
-	})
-	sim.SetX0FromMap(map[state.Symbol]float64{
-		"theta":  0,
-		"Dtheta": 0,
-	})
-	const N_steps = 10
-	sim.Solver = godesim.RKF45Solver
-	sim.SetTimespan(0.0, 1, N_steps)
+		DDtheta := func(s state.State) float64 {
+			return 1
+		}
+		sim := godesim.New()
+		sim.SetChangeMap(map[state.Symbol]state.Changer{
+			"theta":  Dtheta,
+			"Dtheta": DDtheta,
+		})
+		sim.SetX0FromMap(map[state.Symbol]float64{
+			"theta":  0,
+			"Dtheta": 0,
+		})
+		const N_steps = 10
+		sim.Solver = solver
+		sim.SetTimespan(0.0, 1, N_steps)
 
-	sim.Begin()
+		sim.Begin()
 
-	time, x_res := sim.Results("time"), sim.Results("theta")
-	x_quad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
-	if len(time) != N_steps+1 {
-		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
-	}
-	for i := range x_quad {
-		if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
-			t.Errorf("incorrect curve profile for test %s", t.Name())
+		time, x_res := sim.Results("time"), sim.Results("theta")
+		x_quad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
+		if len(time) != N_steps+1 {
+			t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+		}
+		for i := range x_quad {
+			if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+				t.Errorf("incorrect curve profile for test %s", t.Name())
+			}
 		}
 	}
 }
 
 func TestSimpleInput(t *testing.T) {
-	Dtheta := func(s state.State) float64 {
-		return s.U("u")
-	}
+	for _, solver := range gdsimSolvers {
+		Dtheta := func(s state.State) float64 {
+			return s.U("u")
+		}
 
-	inputVar := func(s state.State) float64 {
-		return 1
-	}
-	sim := godesim.New()
-	sim.SetChangeMap(map[state.Symbol]state.Changer{
-		"theta": Dtheta,
-	})
-	sim.SetX0FromMap(map[state.Symbol]float64{
-		"theta": 0,
-	})
-	sim.SetInputMap(map[state.Symbol]state.Input{
-		"u": inputVar,
-	})
-	const N_steps = 5
-	sim.SetTimespan(0.0, 1, N_steps)
-	sim.Begin()
+		inputVar := func(s state.State) float64 {
+			return 1
+		}
+		sim := godesim.New()
+		sim.SetChangeMap(map[state.Symbol]state.Changer{
+			"theta": Dtheta,
+		})
+		sim.SetX0FromMap(map[state.Symbol]float64{
+			"theta": 0,
+		})
+		sim.SetInputMap(map[state.Symbol]state.Input{
+			"u": inputVar,
+		})
+		sim.Solver = solver
+		const N_steps = 5
+		sim.SetTimespan(0.0, 1, N_steps)
+		sim.Begin()
 
-	time, x_res := sim.Results("time"), sim.Results("theta")
-	x_quad := applyFunc(time, func(v float64) float64 { return v /* solution is theta(t) = t*/ })
-	if len(time) != N_steps+1 {
-		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
-	}
-	for i := range x_quad {
-		if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
-			t.Errorf("incorrect curve profile for test %s", t.Name())
+		time, x_res := sim.Results("time"), sim.Results("theta")
+		x_quad := applyFunc(time, func(v float64) float64 { return v /* solution is theta(t) = t*/ })
+		if len(time) != N_steps+1 {
+			t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+		}
+		for i := range x_quad {
+			if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+				t.Errorf("incorrect curve profile for test %s", t.Name())
+			}
 		}
 	}
 
