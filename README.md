@@ -38,7 +38,7 @@ Godesim is in early development and will naturally change as it is used more.
 | Non-linear solver | 🚦️ | First implementation done. Ready to be used. |
 | Non-autonomous support | 🚦️ | `U` vector which need not a defined change equation like `X` does.|
 | Event driver | 🐞️ | Ability to change simulation behaviour during run. i.e: step size, equations used. |
-| Stiff solver | ✖️ | Only have RK4 solver for now. |
+| Stiff solver | 🏗️ | Added RKF45 solver. Adaptive timesteps next. Stiff solver still in planned phase. |
 
 
 
