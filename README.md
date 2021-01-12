@@ -51,6 +51,7 @@ I've been having problems running Pixel on my machine so the simulation animatio
 
 * [Simple pendulum](./_examples/simplePendulum)
 * [Double pendulum exhibiting chaotic motion](./_examples/doublePendulum)
+* [N-Body simulation](./_examples/n-body)
 
 ## Imports
 

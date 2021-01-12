@@ -184,13 +184,16 @@ func (sim *Simulation) Results(sym state.Symbol) []float64 {
 		for i, r := range sim.results {
 			vec[i] = r.U(sym)
 		}
+		return vec
 	}
 	if consX {
 		for i, r := range sim.results {
 			vec[i] = r.X(sym)
 		}
+		return vec
 	}
-	return vec
+	throwf("Simulation.Results: %s not found in X or U symbols", sym)
+	return nil
 }
 
 // StateDiff obtain Change results without modifying State
