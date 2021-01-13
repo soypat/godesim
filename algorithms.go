@@ -1,6 +1,10 @@
 package godesim
 
-import "github.com/soypat/godesim/state"
+import (
+	"math"
+
+	"github.com/soypat/godesim/state"
+)
 
 // RK4Solver Integrates simulation state for next timesteps
 // using 4th order Runge-Kutta multivariable algorithm
@@ -37,6 +41,9 @@ func RK4Solver(sim *Simulation) []state.State {
 
 // RKF45Solver an attempt at a Runge-Kutta-Fehlberg method
 // solver.
+//
+// To enable adaptive stepping, simulation.Algorithm.Step Min/Max values
+// must be set and a simulation.Error.Min must be specified in configuration.
 func RKF45Solver(sim *Simulation) []state.State {
 	// Butcher Tableau for Fehlbergs  4(5) method (Table III https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method)
 	const c20, c21 = 1. / 4., 1. / 4.
@@ -61,29 +68,28 @@ func RKF45Solver(sim *Simulation) []state.State {
 		k1 := StateDiff(sim.change, states[i])
 		state.Scale(h, k1)
 
-		// k2 calc
 		state.AddScaledTo(k2, states[i], c21, k1)
 		k2 = StateDiff(sim.change, k2)
 		state.Scale(h, k2)
-		// k3 calc
+
 		state.AddScaledTo(k3, states[i], c31, k1)
 		state.AddScaled(k3, c32, k2)
 		k3 = StateDiff(sim.change, k3)
 		state.Scale(h, k3)
-		// k4 calc
+
 		state.AddScaledTo(k4, states[i], c41, k1)
 		state.AddScaled(k4, c42, k2)
 		state.AddScaled(k4, c43, k3)
 		k4 = StateDiff(sim.change, k4)
 		state.Scale(h, k4)
-		// k5 calc
+
 		state.AddScaledTo(k5, states[i], c51, k1)
 		state.AddScaled(k5, c52, k2)
 		state.AddScaled(k5, c53, k3)
 		state.AddScaled(k5, c54, k4)
 		k5 = StateDiff(sim.change, k5)
 		state.Scale(h, k5)
-		// k6 calc
+
 		state.AddScaledTo(k6, states[i], c61, k1)
 		state.AddScaled(k6, c62, k2)
 		state.AddScaled(k6, c63, k3)
@@ -92,12 +98,6 @@ func RKF45Solver(sim *Simulation) []state.State {
 		k6 = StateDiff(sim.change, k6)
 		state.Scale(h, k6)
 
-		// fourth order approximation calc
-		state.AddScaledTo(s4, states[i], a1, k1)
-		state.AddScaled(s4, a3, k3)
-		state.AddScaled(s4, a4, k4)
-		state.AddScaled(s4, a5, k5)
-
 		// fifth order approximation calc
 		state.AddScaledTo(s5, states[i], b1, k1)
 		state.AddScaled(s5, b3, k3)
@@ -105,10 +105,27 @@ func RKF45Solver(sim *Simulation) []state.State {
 		state.AddScaled(s5, b5, k5)
 		state.AddScaled(s5, b6, k6)
 
-		states[i+1] = s5.Clone()
-		// calculate error. Should be absolute value
-		state.Abs(state.SubTo(err45, s4, s5))
+		// Adaptive timestep block
+		if sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min {
+			// fourth order approximation calc
+			state.AddScaledTo(s4, states[i], a1, k1)
+			state.AddScaled(s4, a3, k3)
+			state.AddScaled(s4, a4, k4)
+			state.AddScaled(s4, a5, k5)
+			// Error and adaptive timestep implementation
+			state.Abs(state.SubTo(err45, s4, s5))
+			errRatio := sim.Algorithm.Error.Max / state.Max(err45)
+			hnew := math.Min(math.Max(0.9*h*math.Pow(errRatio, .2), sim.Algorithm.Step.Min), sim.Algorithm.Step.Max)
+			sim.Algorithm.Steps = int(float64(sim.Algorithm.Steps) * (h / hnew))
+			h = hnew
+			// If we do not have desired error, and have not reached minimum timestep, repeat step
+			if errRatio < 1 && h != sim.Algorithm.Step.Min {
+				i--
+				continue
+			}
+		}
 
+		states[i+1] = s5.Clone()
 	}
 	return states
 }

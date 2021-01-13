@@ -38,7 +38,7 @@ func TestQuadratic(t *testing.T) {
 
 		time, x_res := sim.Results("time"), sim.Results("theta")
 		x_quad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
-		if len(time) != N_steps+1 {
+		if len(time) != N_steps+1 || sim.Len() != N_steps {
 			t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
 		}
 		for i := range x_quad {

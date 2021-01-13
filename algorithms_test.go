@@ -27,11 +27,25 @@ func BenchmarkRK4(b *testing.B) {
 	sim.Begin()
 }
 
+func BenchmarkRK5(b *testing.B) {
+	sim := godesim.New()
+	sim.Solver = godesim.RKF45Solver
+	sim.Algorithm.Steps = b.N
+	sim.SetTimespan(0, 100., 1)
+	// No adaptive timestepping, only 5th order RK
+	sim.SetDiffFromMap(stiffDiff)
+	sim.SetX0FromMap(stiffX0)
+	sim.Begin()
+}
 func BenchmarkRKF45(b *testing.B) {
 	sim := godesim.New()
 	sim.Solver = godesim.RKF45Solver
 	sim.Algorithm.Steps = b.N
 	sim.SetTimespan(0, 100., 1)
+	// set up adaptive timestep
+	expectedRKStep := sim.Dt() / float64(b.N)
+	sim.Algorithm.Error.Max = .1
+	sim.Algorithm.Step.Min, sim.Algorithm.Step.Max = expectedRKStep, math.Max(expectedRKStep, 4.)
 
 	sim.SetDiffFromMap(stiffDiff)
 	sim.SetX0FromMap(stiffX0)
