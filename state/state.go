@@ -19,17 +19,6 @@ type State struct {
 	time     float64
 }
 
-// Diff represents a single non-linear differential equation
-// of the Simulation's system of differential equation. Specifically, it
-// represents an X variable change.
-type Diff func(State) float64
-
-// Input represents a time-varying or table look-up variable/coefficient
-// of the Simulation's system of differential equations. Inputs can be used to
-// model non-autonomous system of differential equations. Input functions are
-// called after solver algorithm finishes on the resulting state.
-type Input func(State) float64
-
 // New creates empty state
 func New() State {
 	s := State{varmap: make(map[Symbol]int), inputmap: make(map[Symbol]int)}

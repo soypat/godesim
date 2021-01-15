@@ -33,6 +33,7 @@ type Simulation struct {
 // Config modifies Simulation behaviour/output.
 // Set with simulation.SetConfig method
 type Config struct {
+	// Domain is symbol name for step variable. Default is `time`
 	Domain state.Symbol `yaml:"domain"`
 	Log    struct {
 		Results bool `yaml:"results"`
@@ -41,15 +42,23 @@ type Config struct {
 		StepDelay time.Duration `yaml:"delay"`
 	} `yaml:"behaviour"`
 	Algorithm struct {
+		// Number of algorithm steps. Different to simulation Timespan.Len()
 		Steps int `yaml:"steps"`
-		Step  struct {
+		// Step limits for adaptive algorithms
+		Step struct {
 			Max float64 `yaml:"max"`
 			Min float64 `yaml:"min"`
 		} `yaml:"step"`
 		Error struct {
+			// Sets max error before proceeding with adaptive iteration
+			// Step.Min should override this
 			Max float64 `yaml:"max"`
 		} `yaml:"error"`
 	} `yaml:"algorithm"`
+	Symbols struct {
+		// Sorts symbols for consistent logging and testing
+		NoOrdering bool `yaml:"no_ordering"`
+	} `yaml:"symbols"`
 }
 
 // New creates blank simulation

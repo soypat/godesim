@@ -213,3 +213,17 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 	}
 	return states
 }
+
+// NewtonKrylovSolver Not implemented yet
+func NewtonKrylovSolver(sim *Simulation) []state.State {
+
+	states := make([]state.State, sim.Algorithm.Steps+1)
+	h := sim.Dt() / float64(sim.Algorithm.Steps)
+	states[0] = sim.State.Clone()
+	guess := states[0].Clone()
+	guess.SetTime(guess.Time() + h)
+
+	// JF := Jacobian(guess, sim)
+	// _ = JF
+	return nil
+}

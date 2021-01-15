@@ -3,6 +3,7 @@ package godesim
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/soypat/godesim/state"
 	"gonum.org/v1/gonum/floats"
@@ -33,6 +34,9 @@ func (sim *Simulation) verifyPreBegin() {
 	if len(sim.results) > 0 {
 		throwf("Simulation.Begin(): Simulation results not empty")
 	}
+	if !sim.Symbols.NoOrdering {
+		sim.State = orderedState(sim.State)
+	}
 }
 
 func (sim *Simulation) verify() {
@@ -45,7 +49,7 @@ func (sim *Simulation) verify() {
 	if sim.Solver == nil {
 		throwf("Simulation: expected Simulation.Solver. got nil")
 	}
-	symsX, symsU := sim.changeSymbols(), sim.inputSymbols()
+	symsX, symsU := sim.diffSymbols(), sim.inputSymbols()
 	consX, consU := sim.State.ConsistencyX(symsX), sim.State.ConsistencyU(symsU)
 
 	if floats.HasNaN(consX) {
@@ -76,7 +80,7 @@ func (sim *Simulation) isRunning() bool {
 	return sim.Timespan.end > sim.State.Time()+sim.Dt()*.9
 }
 
-func (sim *Simulation) changeSymbols() []state.Symbol {
+func (sim *Simulation) diffSymbols() []state.Symbol {
 	syms := make([]state.Symbol, 0, len(sim.change))
 	for sym := range sim.change {
 		syms = append(syms, sym)
@@ -125,4 +129,24 @@ func (sim *Simulation) applyEvent(ev *Event) error {
 		}
 	}
 	return nil
+}
+
+// generates a new state with ordered X symbols
+func orderedState(s state.State) state.State {
+	syms := s.XSymbols()
+	str := make([]string, len(syms))
+	for i := range syms {
+		str[i] = string(syms[i])
+	}
+	sort.Strings(str)
+	newS := state.New()
+	for i := range str {
+		newS.XEqual(state.Symbol(str[i]), s.X(state.Symbol(str[i])))
+	}
+	syms = s.USymbols()
+	for i := range syms {
+		newS.UEqual(syms[i], s.U(syms[i]))
+	}
+	newS.SetTime(s.Time())
+	return newS
 }
