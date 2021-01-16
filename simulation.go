@@ -19,11 +19,12 @@ import (
 // of differential equations
 type Simulation struct {
 	Timespan
-	State         state.State
-	currentStep   int
-	results       []state.State
-	Solver        func(sim *Simulation) []state.State
-	change        map[state.Symbol]state.Diff
+	State       state.State
+	currentStep int
+	results     []state.State
+	Solver      func(sim *Simulation) []state.State
+	change      map[state.Symbol]state.Diff
+	state.Diffs
 	inputs        map[state.Symbol]state.Input
 	eventHandlers []*EventHandler
 	events        []*Event

@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/soypat/godesim/state"
+	"gonum.org/v1/gonum/mat"
 )
 
 // RK4Solver Integrates simulation state for next timesteps
@@ -216,14 +217,19 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 
 // NewtonKrylovSolver Not implemented yet
 func NewtonKrylovSolver(sim *Simulation) []state.State {
-
+	n := len(sim.change)
 	states := make([]state.State, sim.Algorithm.Steps+1)
-	h := sim.Dt() / float64(sim.Algorithm.Steps)
+	// h := sim.Dt() / float64(sim.Algorithm.Steps)
 	states[0] = sim.State.Clone()
 	guess := states[0].Clone()
-	guess.SetTime(guess.Time() + h)
+	Jf := mat.NewDense(n, n, nil)
 
-	// JF := Jacobian(guess, sim)
-	// _ = JF
+	state.Jacobian(Jf, sim.Diffs, guess)
+	// linsolve.MulVecToer(Jf)
+
 	return nil
+}
+
+func f() {
+
 }

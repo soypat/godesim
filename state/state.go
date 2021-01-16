@@ -1,6 +1,10 @@
 package state
 
-import "math"
+import (
+	"math"
+
+	"gonum.org/v1/gonum/mat"
+)
 
 // Symbol is used to reference a simulation variable.
 //
@@ -12,11 +16,12 @@ type Symbol string
 // Contains X and U vectors for a step instance (i.e. point in time)
 // Can access step variable with Time() method.
 type State struct {
-	varmap   map[Symbol]int
-	x        []float64
-	inputmap map[Symbol]int
-	u        []float64
-	time     float64
+	varmap     map[Symbol]int
+	x          []float64
+	inputmap   map[Symbol]int
+	u          []float64
+	time       float64
+	transposed bool
 }
 
 // New creates empty state
@@ -56,6 +61,59 @@ func (s State) U(sym Symbol) float64 {
 		throwf("%v Symbol does not exist in State inputs", sym)
 	}
 	return s.u[idx]
+}
+
+// Vector implementation
+
+// Len returns amount of X variables in state
+func (s State) Len() int {
+	return len(s.x)
+}
+
+// AtVec gets X variable at position i
+func (s State) AtVec(i int) float64 {
+	return s.x[i]
+}
+
+// Matrix Implementation
+
+// Dims returns X vector dimensions.
+// States are column vectors by default
+func (s State) Dims() (r, c int) {
+	if s.transposed {
+		return 1, s.Len()
+	}
+	return s.Len(), 1 // default status
+}
+
+// At returns X value at row i and column j
+func (s State) At(i, j int) float64 {
+	if s.transposed {
+		return s.x[j]
+	}
+	return s.x[i]
+}
+
+// T transposes matrix and returns the State transposed (not a copy)
+func (s State) T() mat.Matrix {
+	s.transposed = !s.transposed
+	return s
+}
+
+// Matrix is the basic matrix interface type.
+type Matrix interface {
+	// Dims returns the dimensions of a Matrix.
+	Dims() (r, c int)
+
+	// At returns the value of a matrix element at row i, column j.
+	// It will panic if i or j are out of bounds for the matrix.
+	At(i, j int) float64
+
+	// T returns the transpose of the Matrix. Whether T returns a copy of the
+	// underlying data is implementation dependent.
+	// This method may be implemented using the Transpose type, which
+	// provides an implicit matrix transpose.
+	T() Matrix
 }
 
 // Time get State step variable (default time)
@@ -127,7 +185,7 @@ func (s State) CloneBlank(t float64) State {
 	}
 }
 
-// XVector returns state X vector
+// XVector returns copy of state X vector
 func (s State) XVector() []float64 {
 	if len(s.x) == 0 {
 		return make([]float64, 0)
@@ -137,7 +195,7 @@ func (s State) XVector() []float64 {
 	return cp
 }
 
-// UVector returns state U vector
+// UVector returns copy of state U vector
 func (s State) UVector() []float64 {
 	if len(s.u) == 0 {
 		return make([]float64, 0)

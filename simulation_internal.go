@@ -37,6 +37,7 @@ func (sim *Simulation) verifyPreBegin() {
 	if !sim.Symbols.NoOrdering {
 		sim.State = orderedState(sim.State)
 	}
+	sim.setDiffs()
 }
 
 func (sim *Simulation) verify() {
@@ -149,4 +150,11 @@ func orderedState(s state.State) state.State {
 	}
 	newS.SetTime(s.Time())
 	return newS
+}
+
+func (sim *Simulation) setDiffs() {
+	sim.Diffs = make(state.Diffs, len(sim.change))
+	for i, sym := range sim.State.XSymbols() {
+		sim.Diffs[i] = sim.change[sym]
+	}
 }
