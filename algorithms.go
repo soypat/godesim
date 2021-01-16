@@ -106,7 +106,9 @@ func RKF45Solver(sim *Simulation) []state.State {
 		state.AddScaled(s5, b5, k5)
 		state.AddScaled(s5, b6, k6)
 
-		// Adaptive timestep block
+		// assign solution
+		states[i+1] = s5.Clone()
+		// Adaptive timestep block. Modify step length if necessary
 		if sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min {
 			// fourth order approximation calc
 			state.AddScaledTo(s4, states[i], a1, k1)
@@ -117,7 +119,7 @@ func RKF45Solver(sim *Simulation) []state.State {
 			state.Abs(state.SubTo(err45, s4, s5))
 			errRatio := sim.Algorithm.Error.Max / state.Max(err45)
 			hnew := math.Min(math.Max(0.9*h*math.Pow(errRatio, .2), sim.Algorithm.Step.Min), sim.Algorithm.Step.Max)
-			sim.Algorithm.Steps = int(float64(sim.Algorithm.Steps) * (h / hnew))
+			sim.Algorithm.Steps = int(math.Max(float64(sim.Algorithm.Steps)*(h/hnew), 1.0))
 			h = hnew
 			// If we do not have desired error, and have not reached minimum timestep, repeat step
 			if errRatio < 1 && h != sim.Algorithm.Step.Min {
@@ -125,8 +127,6 @@ func RKF45Solver(sim *Simulation) []state.State {
 				continue
 			}
 		}
-
-		states[i+1] = s5.Clone()
 	}
 	return states
 }
