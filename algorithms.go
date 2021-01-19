@@ -131,7 +131,7 @@ func RKF45Solver(sim *Simulation) []state.State {
 	return states
 }
 
-//  RKF45TableauSolver same as RKF45Solver but using arrays
+// RKF45TableauSolver same as RKF45Solver but using arrays
 // as tableaus. Should be slower than RKF45Solver in all respects (except maybe for unidimensional problems).
 func RKF45TableauSolver(sim *Simulation) []state.State {
 	// Butcher Tableau for Fehlbergs  4(5) method (from Table III https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method)

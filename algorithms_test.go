@@ -17,6 +17,25 @@ var stiffX0 = map[state.Symbol]float64{
 	"Dx": -1,
 }
 
+func TestConvergenceRKF45(t *testing.T) {
+	sim := godesim.New()
+	sim.Solver = godesim.RKF45Solver
+	sim.SetTimespan(0, 42., 1)
+	// set up adaptive timestep
+	sim.Algorithm.Error.Max = 1e-4
+	sim.Algorithm.Step.Max, sim.Algorithm.Step.Min = 100, 1e-6
+
+	sim.SetDiffFromMap(stiffDiff)
+	sim.SetX0FromMap(stiffX0)
+	sim.Begin()
+	// tm := sim.Results("time")
+	// t.Errorf("%.2f\n", tm)
+	// fmt.Printf("%.2f\n", tm)
+}
+
+/*
+// Benchmarks
+*/
 func BenchmarkRK4(b *testing.B) {
 	sim := godesim.New()
 	sim.Algorithm.Steps = b.N

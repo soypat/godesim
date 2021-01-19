@@ -128,6 +128,8 @@ func (sim *Simulation) applyEvent(ev *Event) error {
 			}
 			throwf("Simulation: applying event for %s, does not exist in variables or inputs", sym)
 		}
+	case EvEndSimulation:
+		sim.currentStep = -1
 	}
 	return nil
 }
@@ -156,5 +158,35 @@ func (sim *Simulation) setDiffs() {
 	sim.Diffs = make(state.Diffs, len(sim.change))
 	for i, sym := range sim.State.XSymbols() {
 		sim.Diffs[i] = sim.change[sym]
+	}
+}
+
+func (sim *Simulation) handleEvents() {
+	for i := 0; i < len(sim.eventHandlers); i++ {
+		handler := sim.eventHandlers[i]
+		if handler == &IdleHandler { // if idler, remove and continue
+			sim.eventHandlers = append(sim.eventHandlers[:i], sim.eventHandlers[i+1:]...)
+			i--
+			continue
+		}
+		ev := (*handler)(sim.State)
+		if ev == nil || ev.EventKind == EvNone {
+			continue
+		}
+		sim.events = append(sim.events, ev)
+		if ev.EventKind == EvRemove {
+			sim.eventHandlers = append(sim.eventHandlers[:i], sim.eventHandlers[i+1:]...)
+			i--
+			continue
+		}
+		if ev.EventKind == EvEndSimulation {
+			sim.currentStep = -1
+		}
+		err := sim.applyEvent(ev)
+
+		if err != nil {
+			fmt.Println("error in simulation: ", err)
+		}
+		sim.eventHandlers[i] = &IdleHandler
 	}
 }
