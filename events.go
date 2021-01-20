@@ -23,8 +23,9 @@ var (
 	ErrorRemove error = fmt.Errorf("remove this Eventer")
 )
 
-// None is the uneventful event. Changes absolutely nothing
-func None(state.State) func(sim *Simulation) error { return nil }
+// EventDone is the uneventful event. Changes absolutely nothing
+// and is removed from Event handler list.
+func EventDone(sim *Simulation) error { return nil }
 
 // DiffChangeFromMap Event handler. Takes new state variable (X) functions and applies them
 func DiffChangeFromMap(newDiff map[state.Symbol]func(state.State) float64) func(*Simulation) error {
