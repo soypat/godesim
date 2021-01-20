@@ -48,7 +48,8 @@ func NewStepLength(h float64) func(*Simulation) error {
 	return func(sim *Simulation) error {
 		if sim.IsRunning() {
 			steps := math.Ceil((sim.End() - sim.CurrentTime()) / h)
-			sim.SetTimespan(sim.CurrentTime(), steps*h, int(steps))
+
+			sim.SetTimespan(sim.CurrentTime(), sim.CurrentTime()+steps*h, int(steps))
 		}
 		return nil
 	}
