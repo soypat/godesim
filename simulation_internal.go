@@ -73,8 +73,8 @@ func (sim *Simulation) verify() {
 	}
 }
 
-// will contain heavy logic in future. event oriented stuff to come
-func (sim *Simulation) isRunning() bool {
+// IsRunning returns true if Simulation has yet not run last iteration
+func (sim *Simulation) IsRunning() bool {
 	if sim.currentStep < 0 {
 		return false
 	}
@@ -109,31 +109,6 @@ func (sim *Simulation) setInputs() {
 	}
 }
 
-func (sim *Simulation) applyEvent(ev *Event) error {
-	switch ev.EventKind {
-	case EvStepLength:
-		steps := math.Ceil((sim.end - sim.CurrentTime()) / ev.newDomain.Dt())
-		sim.Timespan = newTimespan(sim.CurrentTime(), sim.end, int(steps))
-	case EvError:
-		return ev
-	case EvBehaviour:
-		for i, sym := range ev.targets {
-			if _, ok := sim.change[state.Symbol(sym)]; ok {
-				sim.change[state.Symbol(sym)] = ev.functions[i]
-				continue
-			}
-			if _, ok := sim.inputs[state.Symbol(sym)]; ok {
-				sim.inputs[state.Symbol(sym)] = ev.functions[i]
-				continue
-			}
-			throwf("Simulation: applying event for %s, does not exist in variables or inputs", sym)
-		}
-	case EvEndSimulation:
-		sim.currentStep = -1
-	}
-	return nil
-}
-
 // generates a new state with ordered X symbols
 func orderedState(s state.State) state.State {
 	syms := s.XSymbols()
@@ -162,31 +137,24 @@ func (sim *Simulation) setDiffs() {
 }
 
 func (sim *Simulation) handleEvents() {
-	for i := 0; i < len(sim.eventHandlers); i++ {
-		handler := sim.eventHandlers[i]
-		if handler == &IdleHandler { // if idler, remove and continue
-			sim.eventHandlers = append(sim.eventHandlers[:i], sim.eventHandlers[i+1:]...)
-			i--
+	for i := 0; i < len(sim.eventers); i++ {
+		handler := sim.eventers[i]
+		ev := handler.Event(sim.State)
+		if ev == nil { //no action
 			continue
 		}
-		ev := (*handler)(sim.State)
-		if ev == nil || ev.EventKind == EvNone {
-			continue
-		}
-		sim.events = append(sim.events, ev)
-		if ev.EventKind == EvRemove {
-			sim.eventHandlers = append(sim.eventHandlers[:i], sim.eventHandlers[i+1:]...)
-			i--
-			continue
-		}
-		if ev.EventKind == EvEndSimulation {
-			sim.currentStep = -1
-		}
-		err := sim.applyEvent(ev)
+		err := ev(sim)
+		if err == nil { // add happened event to event list
+			sim.events = append(sim.events, struct {
+				Label string
+				State state.State
+			}{Label: handler.Label(), State: sim.State.Clone()})
 
-		if err != nil {
-			fmt.Println("error in simulation: ", err)
+		} else if err.Error() != ErrorRemove.Error() {
+			fmt.Println("error in simulation event: ", err)
 		}
-		sim.eventHandlers[i] = &IdleHandler
+		// we always remove event after applying it to simulation
+		sim.eventers = append(sim.eventers[:i], sim.eventers[i+1:]...)
+		i--
 	}
 }

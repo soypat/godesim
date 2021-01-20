@@ -21,13 +21,9 @@ func (ts Timespan) Dt() float64 {
 	return ts.stepLength
 }
 
-// TimeVector is the ordered set of all Timespan time points
-func (ts Timespan) TimeVector() []float64 {
-	vec := make([]float64, ts.Len()+1)
-	for step := 0; step < ts.Len()+1; step++ {
-		vec[step] = ts.time(step)
-	}
-	return vec
+// End returns greater limit of Timespan
+func (ts Timespan) End() float64 {
+	return ts.end
 }
 
 // SetTimespan Set time domain (step domain) for simulation

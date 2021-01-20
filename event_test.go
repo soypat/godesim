@@ -8,6 +8,22 @@ import (
 	"github.com/soypat/godesim/state"
 )
 
+type TypicalEventer struct {
+	action func(state.State) func(*godesim.Simulation) error
+	label  string
+}
+
+func (ev TypicalEventer) Event(s state.State) func(*godesim.Simulation) error {
+	return ev.action(s)
+}
+
+func (t TypicalEventer) Label() string {
+	if t.label == "" {
+		panic("empty Eventer label")
+	}
+	return t.label
+}
+
 // TestStepLen changes steplength mid-simulation.
 // Verifies change of steplength and accuracy of results for simpleInput
 func TestStepLen(t *testing.T) {
@@ -35,14 +51,16 @@ func TestStepLen(t *testing.T) {
 		initStepLen := sim.Dt()
 		newStepLen := initStepLen * 0.25
 		tswitch := 0.5
-		sim.AddEventHandlers(func(s state.State) *godesim.Event {
-			if s.Time() >= tswitch {
-				ev := godesim.NewEvent("refine", godesim.EvStepLength)
-				ev.SetStepLength(newStepLen)
-				return ev
-			}
-			return nil
-		})
+		var refiner godesim.Eventer = TypicalEventer{
+			label: "refine",
+			action: func(s state.State) func(*godesim.Simulation) error {
+				if s.Time() >= tswitch {
+					return godesim.NewStepLength(newStepLen)
+				}
+				return nil
+			},
+		}
+		sim.AddEventHandlers(refiner)
 		sim.Solver = solver
 		sim.Begin()
 
@@ -93,16 +111,18 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 		const ti, tf, N_steps = 0.0, 2, 10
 		sim.SetTimespan(ti, tf, N_steps)
 		tswitch := 1.
-		sim.AddEventHandlers(func(s state.State) *godesim.Event {
-			if s.Time() >= tswitch {
-				ev := godesim.NewEvent("change derivative", godesim.EvBehaviour)
-				ev.SetBehaviour(map[state.Symbol]func(state.State) float64{
-					"theta-dot": Dtheta2,
-				})
-				return ev
-			}
-			return nil
-		})
+		var quartic godesim.Eventer = TypicalEventer{
+			label: "change derivative",
+			action: func(s state.State) func(*godesim.Simulation) error {
+				if s.Time() >= tswitch {
+					return godesim.DiffChangeFromMap(map[state.Symbol]func(state.State) float64{
+						"theta-dot": Dtheta2,
+					})
+				}
+				return nil
+			},
+		}
+		sim.AddEventHandlers(quartic)
 		sim.Solver = solver
 		sim.Begin()
 
@@ -151,23 +171,25 @@ func TestMultiEvent(t *testing.T) {
 		stepNew := 0.5 * stepOriginal
 		tStepRefine := 1.
 		tNewEndSim := 2.
-		sim.AddEventHandlers(
-			func(s state.State) *godesim.Event {
+		var endsim godesim.Eventer = TypicalEventer{
+			label: "end sim",
+			action: func(s state.State) func(*godesim.Simulation) error {
 				if s.Time() >= tNewEndSim {
-					return godesim.NewEvent("time up", godesim.EvEndSimulation)
+					return godesim.EndSimulation //godesim.NewEvent("time up", godesim.EvEndSimulation)
 				}
 				return nil
 			},
-			// Augment step size after vehicle runs out of fuel
-			func(s state.State) *godesim.Event {
+		}
+		var refiner godesim.Eventer = TypicalEventer{
+			label: "refine",
+			action: func(s state.State) func(*godesim.Simulation) error {
 				if s.Time() >= tStepRefine {
-					ev := godesim.NewEvent("refine", godesim.EvStepLength)
-					ev.SetStepLength(stepNew)
-					return ev
+					return godesim.NewStepLength(stepNew)
 				}
 				return nil
 			},
-		)
+		}
+		sim.AddEventHandlers(endsim, refiner)
 		sim.Solver = solver
 		sim.Begin()
 

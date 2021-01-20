@@ -25,9 +25,12 @@ type Simulation struct {
 	Solver      func(sim *Simulation) []state.State
 	change      map[state.Symbol]state.Diff
 	state.Diffs
-	inputs        map[state.Symbol]state.Input
-	eventHandlers []*EventHandler
-	events        []*Event
+	inputs   map[state.Symbol]state.Input
+	eventers []Eventer
+	events   []struct {
+		Label string
+		State state.State
+	}
 	Config
 }
 
@@ -97,10 +100,14 @@ func (sim *Simulation) Begin() {
 
 	sim.results = make([]state.State, 0, sim.Algorithm.Steps*sim.Len())
 	sim.results = append(sim.results, sim.State)
-	sim.events = make([]*Event, 0, len(sim.eventHandlers))
+	sim.events = make([]struct {
+		Label string
+		State state.State
+	}, 0, len(sim.eventers))
+	eventsOn := sim.eventers != nil && len(sim.eventers) > 0
 
 	var states []state.State
-	for sim.isRunning() {
+	for sim.IsRunning() {
 		sim.currentStep++
 		states = sim.Solver(sim)
 		sim.results = append(sim.results, states[1:]...)
@@ -110,7 +117,7 @@ func (sim *Simulation) Begin() {
 			fmt.Printf("%v\n", sim.State)
 		}
 		time.Sleep(sim.Behaviour.StepDelay)
-		if sim.eventHandlers != nil && len(sim.eventHandlers) > 0 {
+		if eventsOn {
 			sim.handleEvents()
 		}
 	}
@@ -195,23 +202,22 @@ func StateDiff(F map[state.Symbol]state.Diff, S state.State) state.State {
 }
 
 // AddEventHandlers add event handlers to simulation.
-func (sim *Simulation) AddEventHandlers(evhand ...EventHandler) {
+func (sim *Simulation) AddEventHandlers(evhand ...Eventer) {
 	if len(evhand) == 0 {
 		throwf("AddEventHandlers: can't add 0 event handlers")
 	}
-	if sim.eventHandlers == nil {
-		sim.eventHandlers = make([]*EventHandler, 0, len(evhand))
+	if sim.eventers == nil {
+		sim.eventers = make([]Eventer, 0, len(evhand))
 	}
 	for i := range evhand {
-		sim.eventHandlers = append(sim.eventHandlers, &evhand[i])
+		sim.eventers = append(sim.eventers, evhand[i])
 	}
 }
 
 // Events Returns a copy of all simulation events
-func (sim *Simulation) Events() []Event {
-	ev := make([]Event, len(sim.events))
-	for i := range sim.events {
-		ev[i] = *sim.events[i]
-	}
-	return ev
+func (sim *Simulation) Events() []struct {
+	Label string
+	State state.State
+} {
+	return sim.events
 }
