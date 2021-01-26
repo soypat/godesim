@@ -189,14 +189,14 @@ func (sim *Simulation) Results(sym state.Symbol) []float64 {
 
 // StateDiff obtain Change results without modifying State
 // Returns state evolution (result of applying Changer functions to S)
-func StateDiff(F map[state.Symbol]state.Diff, S state.State) state.State {
+func StateDiff(F state.Diffs, S state.State) state.State {
 	diff := S.Clone()
 	syms := S.XSymbols()
 	if len(F) != len(syms) {
 		throwf("length of func slice not equal to float slice (%v vs. %v)", len(F), len(syms))
 	}
 	for i := 0; i < len(F); i++ {
-		diff.XEqual(syms[i], F[syms[i]](S))
+		diff.XEqual(syms[i], F[i](S))
 	}
 	return diff
 }

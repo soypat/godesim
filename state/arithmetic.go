@@ -88,6 +88,13 @@ func MulTo(dst, s, t State) State {
 	return dst
 }
 
+// Norm returns the L norm of state s, defined as (sum_{i=1}^N s[i]^L)^{1/L}
+//
+// Special cases: L = math.Inf(1) gives the maximum absolute value. Does not correctly compute the zero norm (use Count)
+func Norm(s State, L float64) float64 {
+	return floats.Norm(s.x, L)
+}
+
 // Scale multiplies every element in dst by the scalar c.
 func Scale(c float64, dst State) {
 	floats.Scale(c, dst.x)

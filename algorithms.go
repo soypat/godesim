@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/soypat/godesim/state"
+	"gonum.org/v1/exp/linsolve"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -19,16 +20,16 @@ func RK4Solver(sim *Simulation) []state.State {
 		t := states[i].Time()
 		b, c, d := states[i].CloneBlank(t+.5*h), states[i].CloneBlank(t+.5*h), states[i].CloneBlank(t+h)
 
-		a := StateDiff(sim.change, states[i])
+		a := StateDiff(sim.Diffs, states[i])
 
 		state.AddScaledTo(b, states[i], 0.5*h, a)
-		b = StateDiff(sim.change, b)
+		b = StateDiff(sim.Diffs, b)
 
 		state.AddScaledTo(c, states[i], 0.5*h, b)
-		c = StateDiff(sim.change, c)
+		c = StateDiff(sim.Diffs, c)
 
 		state.AddScaledTo(d, states[i], h, c)
-		d = StateDiff(sim.change, d)
+		d = StateDiff(sim.Diffs, d)
 
 		state.Add(a, d)
 		state.Add(b, c)
@@ -66,29 +67,29 @@ func RKF45Solver(sim *Simulation) []state.State {
 		k2, k3, k4, k5, k6, s4, s5, err45 := states[i].CloneBlank(t+c20*h), states[i].CloneBlank(t+c30*h), states[i].CloneBlank(t+c40*h),
 			states[i].CloneBlank(t+h), states[i].CloneBlank(t+c60*h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h)
 
-		k1 := StateDiff(sim.change, states[i])
+		k1 := StateDiff(sim.Diffs, states[i])
 		state.Scale(h, k1)
 
 		state.AddScaledTo(k2, states[i], c21, k1)
-		k2 = StateDiff(sim.change, k2)
+		k2 = StateDiff(sim.Diffs, k2)
 		state.Scale(h, k2)
 
 		state.AddScaledTo(k3, states[i], c31, k1)
 		state.AddScaled(k3, c32, k2)
-		k3 = StateDiff(sim.change, k3)
+		k3 = StateDiff(sim.Diffs, k3)
 		state.Scale(h, k3)
 
 		state.AddScaledTo(k4, states[i], c41, k1)
 		state.AddScaled(k4, c42, k2)
 		state.AddScaled(k4, c43, k3)
-		k4 = StateDiff(sim.change, k4)
+		k4 = StateDiff(sim.Diffs, k4)
 		state.Scale(h, k4)
 
 		state.AddScaledTo(k5, states[i], c51, k1)
 		state.AddScaled(k5, c52, k2)
 		state.AddScaled(k5, c53, k3)
 		state.AddScaled(k5, c54, k4)
-		k5 = StateDiff(sim.change, k5)
+		k5 = StateDiff(sim.Diffs, k5)
 		state.Scale(h, k5)
 
 		state.AddScaledTo(k6, states[i], c61, k1)
@@ -96,7 +97,7 @@ func RKF45Solver(sim *Simulation) []state.State {
 		state.AddScaled(k6, c63, k3)
 		state.AddScaled(k6, c64, k4)
 		state.AddScaled(k6, c65, k5)
-		k6 = StateDiff(sim.change, k6)
+		k6 = StateDiff(sim.Diffs, k6)
 		state.Scale(h, k6)
 
 		// fifth order approximation calc
@@ -156,25 +157,25 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 		k2, k3, k4, k5, k6, s4, s5, err45 := states[i].CloneBlank(t+A[1]*h), states[i].CloneBlank(t+A[2]*h), states[i].CloneBlank(t+A[3]*h),
 			states[i].CloneBlank(t+A[4]*h), states[i].CloneBlank(t+A[5]*h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h)
 
-		k1 := StateDiff(sim.change, states[i])
+		k1 := StateDiff(sim.Diffs, states[i])
 		state.Scale(h, k1)
 
 		// k2 calc
 		state.AddScaledTo(k2, states[i], B[1][0], k1)
-		k2 = StateDiff(sim.change, k2)
+		k2 = StateDiff(sim.Diffs, k2)
 		state.Scale(h, k2)
 
 		// k3 calc
 		state.AddScaledTo(k3, states[i], B[2][0], k1)
 		state.AddScaled(k3, B[2][1], k2)
-		k3 = StateDiff(sim.change, k3)
+		k3 = StateDiff(sim.Diffs, k3)
 		state.Scale(h, k3)
 
 		// k4 calc
 		state.AddScaledTo(k4, states[i], B[3][0], k1)
 		state.AddScaled(k4, B[3][1], k2)
 		state.AddScaled(k4, B[3][2], k3)
-		k4 = StateDiff(sim.change, k4)
+		k4 = StateDiff(sim.Diffs, k4)
 		state.Scale(h, k4)
 
 		// k5 calc
@@ -182,7 +183,7 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 		state.AddScaled(k5, B[4][1], k2)
 		state.AddScaled(k5, B[4][2], k3)
 		state.AddScaled(k5, B[4][3], k4)
-		k5 = StateDiff(sim.change, k5)
+		k5 = StateDiff(sim.Diffs, k5)
 		state.Scale(h, k5)
 		// k6 calc
 		state.AddScaledTo(k6, states[i], B[5][0], k1)
@@ -190,7 +191,7 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 		state.AddScaled(k6, B[5][2], k3)
 		state.AddScaled(k6, B[5][3], k4)
 		state.AddScaled(k6, B[5][4], k5)
-		k6 = StateDiff(sim.change, k6)
+		k6 = StateDiff(sim.Diffs, k6)
 		state.Scale(h, k6)
 
 		// fifth order approximation calc
@@ -215,21 +216,55 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 	return states
 }
 
-// NewtonKrylovSolver Not implemented yet
-func NewtonKrylovSolver(sim *Simulation) []state.State {
-	n := len(sim.change)
+// NewtonIterativeSolver Not implemented yet
+func NewtonIterativeSolver(sim *Simulation) []state.State {
+	const newtonIterationsMax = 3
+	n := len(sim.Diffs)
+
 	states := make([]state.State, sim.Algorithm.Steps+1)
-	// h := sim.Dt() / float64(sim.Algorithm.Steps)
+	h := sim.Dt() / float64(sim.Algorithm.Steps)
+
+	residualers := make([]func(step float64, now state.State) func(next state.State) float64, n)
+	for loopi, loopsym := range sim.State.XSymbols() {
+		i, sym := loopi, loopsym
+		residualers[i] = func(step float64, now state.State) func(next state.State) float64 {
+			return func(next state.State) float64 {
+				return next.X(sym) - now.X(sym) - step*sim.Diffs[i](next)
+			}
+		}
+	}
 	states[0] = sim.State.Clone()
-	guess := states[0].Clone()
-	Jf := mat.NewDense(n, n, nil)
+	for i := 0; i < len(states)-1; i++ {
 
-	state.Jacobian(Jf, sim.Diffs, guess)
-	// linsolve.MulVecToer(Jf)
+		guess := states[i].Clone()
+		v := 0
+		for i == 0 || state.Norm(state.SubTo(states[i+1], guess, states[i]), 2) < sim.Config.Algorithm.Error.Max || v < newtonIterationsMax {
+			// First propose residual functions such that
+			// F(X_(i+1)) = 0
+			F := make(state.Diffs, n)
+			for i := range residualers {
+				F[i] = residualers[i](h, guess)
+			}
 
-	return nil
-}
+			// We solve  J^-1 * b  where b = F(X_(i|g))
+			// X_(i+1) = X_(i) - F(X_(i|g)) / J(X_(i|g)) where g are guesses
 
-func f() {
+			b := mat.NewVecDense(n, StateDiff(F, guess).XVector())
+			Jf := mat.NewDense(n, n, nil)
+			state.Jacobian(Jf, F, guess)
+			jac := mat.NewBandDense(n, n, n-1, n-1, Jf.RawMatrix().Data)
+			result, err := linsolve.Iterative(jac, b, &linsolve.BiCGStab{}, nil)
+			if err != nil {
+				throwf("error in newton iterative solver: %s", err)
+			}
+			guess = states[i].CloneBlank(float64(i+1) * h)
+			guess.SetAllX(result.X.RawVector().Data)
+			state.Add(guess, states[i])
+			v++
+		}
 
+		states[i+1] = guess
+	}
+
+	return states
 }

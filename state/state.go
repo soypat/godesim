@@ -263,3 +263,10 @@ func (s State) ConsistencyX(question []Symbol) []float64 {
 	}
 	return result
 }
+
+func (s *State) SetAllX(new []float64) {
+	if len(s.varmap) != len(new) {
+		throwf("new slice length %d does not coincide with state X symbol length %d", len(new), len(s.varmap))
+	}
+	s.x = new
+}
