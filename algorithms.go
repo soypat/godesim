@@ -218,7 +218,7 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 
 // NewtonIterativeSolver Not implemented yet
 func NewtonIterativeSolver(sim *Simulation) []state.State {
-	const newtonIterationsMax = 3
+	var newtonIterationsMax = 5
 	n := len(sim.Diffs)
 
 	states := make([]state.State, sim.Algorithm.Steps+1)
@@ -236,30 +236,33 @@ func NewtonIterativeSolver(sim *Simulation) []state.State {
 	states[0] = sim.State.Clone()
 	for i := 0; i < len(states)-1; i++ {
 
-		guess := states[i].Clone()
+		guess := states[i].Clone() // first guess is previous state
+		guess.SetTime(states[i].Time() + h)
+		states[i+1] = states[i].CloneBlank(states[i].Time() + h)
 		v := 0
-		for i == 0 || state.Norm(state.SubTo(states[i+1], guess, states[i]), 2) < sim.Config.Algorithm.Error.Max || v < newtonIterationsMax {
+		// |X_(g) - X_(i)| < permissible error
+		for v == 0 || (v < newtonIterationsMax && state.Norm(state.SubTo(states[i+1], guess, states[i]), 2) < sim.Config.Algorithm.Error.Max) {
 			// First propose residual functions such that
-			// F(X_(i+1)) = 0
+			// F(X_(i+1)) = 0 = X_(i+1) - X_(i) - step * f(X_(i+1))
+			// where f is the vector of differential equations
 			F := make(state.Diffs, n)
 			for i := range residualers {
 				F[i] = residualers[i](h, guess)
 			}
 
-			// We solve  J^-1 * b  where b = F(X_(i|g))
-			// X_(i+1) = X_(i) - F(X_(i|g)) / J(X_(i|g)) where g are guesses
-
+			// We solve  J^-1 * b  where b = F(X_(g)) and J = J(X_(g))
 			b := mat.NewVecDense(n, StateDiff(F, guess).XVector())
-			Jf := mat.NewDense(n, n, nil)
-			state.Jacobian(Jf, F, guess)
-			jac := mat.NewBandDense(n, n, n-1, n-1, Jf.RawMatrix().Data)
-			result, err := linsolve.Iterative(jac, b, &linsolve.BiCGStab{}, nil)
+			Jaux := mat.NewDense(n, n, nil)
+			state.Jacobian(Jaux, F, guess)
+			J := mat.NewBandDense(n, n, n-1, n-1, Jaux.RawMatrix().Data)
+
+			result, err := linsolve.Iterative(J, b, &linsolve.GMRES{}, &linsolve.Settings{MaxIterations: 2})
 			if err != nil {
 				throwf("error in newton iterative solver: %s", err)
 			}
-			guess = states[i].CloneBlank(float64(i+1) * h)
 			guess.SetAllX(result.X.RawVector().Data)
-			state.Add(guess, states[i])
+			// X_(i+1) = X_(i) - F(X_(g)) / J(X_(g)) where g are guesses
+			state.SubTo(guess, states[i], guess)
 			v++
 		}
 

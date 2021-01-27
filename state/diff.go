@@ -21,16 +21,16 @@ type Input func(State) float64
 
 // Jacobian approximates jacobian matrix for Diffs system
 func Jacobian(dst *mat.Dense, d Diffs, s State) *mat.Dense {
-	n := len(d)
+	// n := len(d)
 	f := func(y, x []float64) {
-		sx := State{x: x}
+		sx := s.Clone()
 		for i := 0; i < len(d); i++ {
 			y[i] = d[i](sx)
 		}
 	}
-	j := &mat.Dense{}
-	fd.Jacobian(j, f, s.x, nil)
-	mat.NewBandDense(n, n, n-1, n-1, j.RawMatrix().Data)
+	// j := &mat.Dense{}
+	fd.Jacobian(dst, f, s.x, nil)
+	// mat.NewBandDense(n, n, n-1, n-1, j.RawMatrix().Data)
 	return dst
 }
 
