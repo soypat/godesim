@@ -4,7 +4,7 @@
 package godesim
 
 import (
-	"fmt"
+	"os"
 	"time"
 
 	"github.com/soypat/godesim/state"
@@ -19,6 +19,7 @@ import (
 // of differential equations
 type Simulation struct {
 	Timespan
+	Logger      Logger
 	State       state.State
 	currentStep int
 	results     []state.State
@@ -40,7 +41,14 @@ type Config struct {
 	// Domain is symbol name for step variable. Default is `time`
 	Domain state.Symbol `yaml:"domain"`
 	Log    struct {
-		Results bool `yaml:"results"`
+		Results struct {
+			AllStates bool
+			FormatLen int    `yaml:"format_len"`
+			Separator string `yaml:"separator"`
+			Precision int    `yaml:"prec"`
+			// EventPadding int    `yaml:"event_padding"`
+			// EventPrefix  string `yaml:"event_prefix"`
+		} `yaml:"results"`
 	} `yaml:"log"`
 	Behaviour struct {
 		StepDelay time.Duration `yaml:"delay"`
@@ -79,6 +87,7 @@ func New() *Simulation {
 	sim := Simulation{
 		change: make(map[state.Symbol]state.Diff),
 		Solver: RK4Solver,
+		Logger: newLogger(os.Stdout),
 	}
 	sim.Domain, sim.Algorithm.Steps = "time", 1
 	return &sim
@@ -113,14 +122,15 @@ func (sim *Simulation) Begin() {
 		sim.results = append(sim.results, states[1:]...)
 		sim.State = states[len(states)-1]
 		sim.setInputs()
-		if sim.Log.Results {
-			fmt.Printf("%v\n", sim.State)
+		if sim.Log.Results.FormatLen > 0 {
+			sim.logStates(states)
 		}
 		time.Sleep(sim.Behaviour.StepDelay)
 		if eventsOn {
 			sim.handleEvents()
 		}
 	}
+	sim.currentStep-- // to add breakpoint
 }
 
 // SetX0FromMap sets simulation's initial X values from a Symbol map
@@ -220,4 +230,8 @@ func (sim *Simulation) Events() []struct {
 	State state.State
 } {
 	return sim.events
+}
+
+func (sim *Simulation) Logf(format string, a ...interface{}) {
+
 }

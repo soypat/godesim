@@ -10,7 +10,7 @@ import (
 )
 
 // add all testable solvers here
-var gdsimSolvers = []func(*godesim.Simulation) []state.State{godesim.RK4Solver, godesim.RKF45Solver, godesim.RKF45TableauSolver, godesim.NewtonIterativeSolver}
+var gdsimSolvers = []func(*godesim.Simulation) []state.State{godesim.RK4Solver, godesim.RKF45Solver, godesim.RKF45TableauSolver /*, godesim.NewtonIterativeSolver*/}
 
 func TestQuadratic(t *testing.T) {
 	for _, solver := range gdsimSolvers {

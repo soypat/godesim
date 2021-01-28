@@ -227,19 +227,16 @@ func (s State) USymbols() []Symbol {
 // and if a symbol is missing.
 //
 // It takes a vector of Symbols and returns a vector
-// of floats with each number corresponding to Symbol U state
+// of zero floats
 //
 // If a symbol is not present in U
 // then an IEEE 754 “not-a-number” value will correspond to it.
 func (s State) ConsistencyU(question []Symbol) []float64 {
 	result := make([]float64, len(question))
 	for i, sym := range question {
-
-		if s.has("U", sym) {
-			result[i] = s.U(sym)
-			continue
+		if !s.has("U", sym) {
+			result[i] = math.NaN()
 		}
-		result[i] = math.NaN()
 	}
 	return result
 }
@@ -248,18 +245,17 @@ func (s State) ConsistencyU(question []Symbol) []float64 {
 // and if a symbol is missing.
 //
 // It takes a vector of Symbols and returns a vector
-// of floats with each number corresponding to Symbol X state
+// of zero floats
 //
 // If a symbol is not present in X
 // then an IEEE 754 “not-a-number” value will correspond to it.
 func (s State) ConsistencyX(question []Symbol) []float64 {
 	result := make([]float64, len(question))
 	for i, sym := range question {
-		if s.has("X", sym) {
-			result[i] = s.X(sym)
-			continue
+		if !s.has("X", sym) {
+			result[i] = math.NaN()
 		}
-		result[i] = math.NaN()
+
 	}
 	return result
 }

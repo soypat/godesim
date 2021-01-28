@@ -37,8 +37,8 @@ Godesim is in early development and will naturally change as it is used more.
 | -------- |:------:| ----- |
 | Non-linear solvers | 🚦️ | Suite of ODE solvers available. |
 | Non-autonomous support | 🚦️ | `U` vector which need not a defined differential equation like `X` does.|
-| Event driver | 🐞️ | Ability to change simulation behaviour during run. i.e: step size, equations used. |
-| Stiff solver | 🏗️ | RKF45 implements adaptive timestep. No stiff solver yet. |
+| Event driver | 🚦️ | Eventer interface implemented. |
+| Stiff solver | 🏗️ | Working on Newton implementation of Euler-Backward. |
 
 
 
@@ -46,7 +46,7 @@ Godesim is in early development and will naturally change as it is used more.
 
 To run an example, navigate to it's directory (under [`examples`](./_examples)) then type `go run .` in console.
 
-There are two simple examples which have been cooked under the  directory.
+There are three simple examples which have been cooked up and left in `_examples` directory.
 I've been having problems running Pixel on my machine so the simulation animations are still under work.
 
 * [Simple pendulum](./_examples/simplePendulum)

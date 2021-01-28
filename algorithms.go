@@ -218,6 +218,7 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 
 // NewtonIterativeSolver Not implemented yet
 func NewtonIterativeSolver(sim *Simulation) []state.State {
+	panic("Newton solver not implemented")
 	var newtonIterationsMax = 5
 	n := len(sim.Diffs)
 
@@ -254,7 +255,7 @@ func NewtonIterativeSolver(sim *Simulation) []state.State {
 			b := mat.NewVecDense(n, StateDiff(F, guess).XVector())
 			Jaux := mat.NewDense(n, n, nil)
 			state.Jacobian(Jaux, F, guess)
-			J := mat.NewBandDense(n, n, n-1, n-1, Jaux.RawMatrix().Data)
+			J := denseToBand(Jaux)
 
 			result, err := linsolve.Iterative(J, b, &linsolve.GMRES{}, &linsolve.Settings{MaxIterations: 2})
 			if err != nil {
@@ -270,4 +271,15 @@ func NewtonIterativeSolver(sim *Simulation) []state.State {
 	}
 
 	return states
+}
+
+func denseToBand(d *mat.Dense) *mat.BandDense {
+	r, c := d.Caps()
+	b := mat.NewBandDense(r, c, r-1, c-1, nil)
+	for i := 0; i < r; i++ {
+		for j := 0; j < c; j++ {
+			b.SetBand(i, j, d.At(i, j))
+		}
+	}
+	return b
 }

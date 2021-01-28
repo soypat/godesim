@@ -158,3 +158,53 @@ func (sim *Simulation) handleEvents() {
 		i--
 	}
 }
+
+func (sim *Simulation) logStates(states []state.State) {
+	// log state symbols
+	if sim.currentStep == 1 {
+		sim.Logger.Logf("%s%s", fixLength(string(sim.Domain), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
+		for i, sym := range sim.State.XSymbols() {
+			if len(sim.State.USymbols()) == 0 && i == len(sim.State.XSymbols())-1 {
+				sim.Logger.Logf("%s", fixLength(string(sym), sim.Log.Results.FormatLen))
+			} else {
+				sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
+			}
+		}
+		for i, sym := range sim.State.USymbols() {
+			if i == len(sim.State.USymbols())-1 {
+				sim.Logger.Logf("%s", fixLength(string(sym), sim.Log.Results.FormatLen))
+			} else {
+				sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
+			}
+		}
+	}
+	fmtlen := sim.Log.Results.FormatLen + len(sim.Log.Results.Separator)
+	formatter := fmt.Sprintf("%%%d.%dv%s", fmtlen, sim.Log.Results.Precision, sim.Log.Results.Separator)
+
+	for _, s := range states {
+		sim.Logger.Logf(formatter, s.Time())
+		for i, v := range s.XVector() {
+			if i == len(s.XVector())-1 {
+				sim.Logger.Logf(formatter[:len(formatter)-len(sim.Log.Results.Separator)], v)
+			} else {
+				sim.Logger.Logf(formatter, v)
+			}
+
+		}
+		for i, v := range s.UVector() {
+			if i == len(s.UVector())-1 {
+				sim.Logger.Logf(formatter[:len(formatter)-len(sim.Log.Results.Separator)], v)
+			} else {
+				sim.Logger.Logf(formatter, v)
+			}
+		}
+	}
+}
+
+func fixLength(s string, l int) string {
+	const spaces64 = "                                                                "
+	if len(s) < l {
+		return s + spaces64[:l-len(s)]
+	}
+	return s[:l]
+}

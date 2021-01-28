@@ -80,3 +80,17 @@ func BenchmarkRKF45Tableau(b *testing.B) {
 	sim.SetX0FromMap(stiffX0)
 	sim.Begin()
 }
+
+/*
+func BenchmarkNewton(b *testing.B) {
+	sim := godesim.New()
+	sim.Solver = godesim.NewtonIterativeSolver
+	sim.Algorithm.Steps = b.N
+	sim.SetTimespan(0, 100., 1)
+	sim.SetDiffFromMap(stiffDiff)
+	sim.SetX0FromMap(stiffX0)
+	sim.Begin()
+	v := sim.Results("x")
+	fmt.Printf("%v", v)
+}
+*/
