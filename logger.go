@@ -18,6 +18,7 @@ type Logger struct {
 func (log *Logger) Logf(format string, a ...interface{}) {
 	log.buff.WriteString(fmt.Sprintf(format, a...))
 }
+
 func (log *Logger) flush() {
 	log.Output.Write([]byte(log.buff.String()))
 	log.buff.Reset()
