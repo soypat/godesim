@@ -239,7 +239,3 @@ func (sim *Simulation) Events() []struct {
 } {
 	return sim.events
 }
-
-func (sim *Simulation) Logf(format string, a ...interface{}) {
-
-}
