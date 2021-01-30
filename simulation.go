@@ -45,7 +45,9 @@ type Config struct {
 			AllStates bool
 			FormatLen int    `yaml:"format_len"`
 			Separator string `yaml:"separator"`
-			Precision int    `yaml:"prec"`
+			// Defines X in formatter %a.Xg for floating point values.
+			// A value of -1 specifies default precision
+			Precision int `yaml:"prec"`
 			// EventPadding int    `yaml:"event_padding"`
 			// EventPrefix  string `yaml:"event_prefix"`
 		} `yaml:"results"`
@@ -89,7 +91,7 @@ func New() *Simulation {
 		Solver: RK4Solver,
 		Logger: newLogger(os.Stdout),
 	}
-	sim.Domain, sim.Algorithm.Steps = "time", 1
+	sim.Domain, sim.Algorithm.Steps, sim.Log.Results.Precision = "time", 1, -1
 	return &sim
 }
 
@@ -113,8 +115,12 @@ func (sim *Simulation) Begin() {
 		Label string
 		State state.State
 	}, 0, len(sim.eventers))
-	eventsOn := sim.eventers != nil && len(sim.eventers) > 0
 
+	eventsOn := sim.eventers != nil && len(sim.eventers) > 0
+	logging := sim.Log.Results.FormatLen > 0
+	if logging {
+		sim.logStates(sim.results[:1])
+	}
 	var states []state.State
 	for sim.IsRunning() {
 		sim.currentStep++
@@ -122,15 +128,17 @@ func (sim *Simulation) Begin() {
 		sim.results = append(sim.results, states[1:]...)
 		sim.State = states[len(states)-1]
 		sim.setInputs()
-		if sim.Log.Results.FormatLen > 0 {
-			sim.logStates(states)
+		if logging {
+			sim.logStates(states[1:])
 		}
 		time.Sleep(sim.Behaviour.StepDelay)
 		if eventsOn {
 			sim.handleEvents()
 		}
 	}
-	sim.currentStep-- // to add breakpoint
+	if logging {
+		sim.Logger.flush()
+	}
 }
 
 // SetX0FromMap sets simulation's initial X values from a Symbol map

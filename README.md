@@ -77,7 +77,7 @@ DDtheta := func(s state.State) float64 {
 }
 // Set the Simulation's differential equations and initial values and hit Begin!
 sim := godesim.New() // Configurable with Simulation.SetConfig(godesim.Config{...})
-sim.SetChangeMap(map[state.Symbol]state.Diff {
+sim.SetDiffFromMap(map[state.Symbol]state.Diff {
     "theta":  Dtheta,
     "theta-dot": DDtheta,
 })

@@ -44,8 +44,8 @@ func RK4Solver(sim *Simulation) []state.State {
 // RKF45Solver an attempt at a Runge-Kutta-Fehlberg method
 // solver.
 //
-// To enable adaptive stepping, simulation.Algorithm.Step Min/Max values
-// must be set and a simulation.Error.Min must be specified in configuration.
+// To enable adaptive stepping, Config.Algorithm.Step Min/Max values
+// must be set and a Config.Error.Min must be specified in configuration.
 func RKF45Solver(sim *Simulation) []state.State {
 	// Butcher Tableau for Fehlbergs  4(5) method (Table III https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method)
 	const c20, c21 = 1. / 4., 1. / 4.
@@ -57,7 +57,7 @@ func RKF45Solver(sim *Simulation) []state.State {
 	const a1, a3, a4, a5 = 25. / 216., 1408. / 2565., 2197. / 4104., -1. / 5.
 	// Fifth order
 	const b1, b3, b4, b5, b6 = 16. / 135., 6656. / 12825., 28561. / 56430., -9. / 50., 2. / 55.
-
+	adaptive := sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min
 	states := make([]state.State, sim.Algorithm.Steps+1)
 	h := sim.Dt() / float64(sim.Algorithm.Steps)
 	states[0] = sim.State.Clone()
@@ -110,7 +110,7 @@ func RKF45Solver(sim *Simulation) []state.State {
 		// assign solution
 		states[i+1] = s5.Clone()
 		// Adaptive timestep block. Modify step length if necessary
-		if sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min {
+		if adaptive {
 			// fourth order approximation calc
 			state.AddScaledTo(s4, states[i], a1, k1)
 			state.AddScaled(s4, a3, k3)

@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"math"
+	"os"
 
+	yaml "github.com/goccy/go-yaml"
 	"github.com/soypat/godesim"
 	"github.com/soypat/godesim/state"
 )
@@ -77,18 +79,31 @@ func main() {
 		body{name: "moon", mass: 7.3477e22, x0: 384e6, v0: 1.022e3},
 		body{name: "iss", mass: 420e3, x0: 408e3, v0: 7.66e3},
 	}
-	sim := godesim.New()
+	fp, err := os.Open("cfg.yml")
+	if err != nil {
+		panic(err)
+	}
+	cfg := new(godesim.Config)
+	y := yaml.NewDecoder(fp)
+	y.Decode(cfg)
+	sim := godesim.New().SetConfig(*cfg)
 
 	sim.SetDiffFromMap(system.DiffMap())
+
 	x0 := system.X0Map()
 	sim.SetX0FromMap(x0)
 
 	sim.SetTimespan(0., daysToSeconds(28.), 1000)
-
+	fp, err = os.Create("output.csv")
+	if err != nil {
+		panic(err)
+	}
+	sim.Logger.Output = fp
+	sim.Solver = godesim.RKF45Solver
 	sim.Begin()
 
-	time, x := sim.Results("time"), sim.Results(system[1].sym("x"))
-	fmt.Printf("%.2f\n\n%.2f\n", time, x)
+	// time, x := sim.Results("time"), sim.Results(system[1].sym("x"))
+	// fmt.Printf("%.2f\n\n%.2f\n", time, x)
 }
 
 func daysToSeconds(d float64) float64 {

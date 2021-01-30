@@ -1,0 +1,15 @@
+title: "n-body"
+domain: "time"
+log:
+  results:
+    format_len: 6
+    separator: ", "
+    prec: 3
+
+algorithm:
+  steps: 1
+  step:
+    max: 1.e+4 
+    min: 3600 # one hour
+  error:
+    max: 1.e+4

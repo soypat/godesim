@@ -2,4 +2,4 @@
 
 Each directory contains a single `.go` file with the godesim usage example and maybe some animation showing results.
 
-This readme will compile any use of godesim.
+[N-body](./n-body) has an example of configuration file usage and outputs results to csv file.

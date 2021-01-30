@@ -30,6 +30,9 @@ func warnf(format string, a ...interface{}) {
 }
 
 func (sim *Simulation) verifyPreBegin() {
+	if err := verifyConfig(sim.Config); err != nil {
+		throwf(err.Error())
+	}
 	sim.verify()
 	if len(sim.results) > 0 {
 		throwf("Simulation.Begin(): Simulation results not empty")
@@ -71,6 +74,16 @@ func (sim *Simulation) verify() {
 		}
 		panic("should be unreachable")
 	}
+}
+
+func verifyConfig(cfg Config) error {
+	if cfg.Domain == "" {
+		return fmt.Errorf("config: empty domain name")
+	}
+	if cfg.Algorithm.Steps < 1 {
+		return fmt.Errorf("config: algorithm steps must be at least 1")
+	}
+	return nil
 }
 
 // IsRunning returns true if Simulation has yet not run last iteration
@@ -149,9 +162,8 @@ func (sim *Simulation) handleEvents() {
 				Label string
 				State state.State
 			}{Label: handler.Label(), State: sim.State.Clone()})
-
 		} else if err.Error() != ErrorRemove.Error() {
-			fmt.Println("error in simulation event: ", err)
+			sim.Logger.Logf("error in simulation event: %s", err)
 		}
 		// we always remove event after applying it to simulation
 		sim.eventers = append(sim.eventers[:i], sim.eventers[i+1:]...)
@@ -161,31 +173,36 @@ func (sim *Simulation) handleEvents() {
 
 func (sim *Simulation) logStates(states []state.State) {
 	// log state symbols
-	if sim.currentStep == 1 {
+
+	if sim.currentStep == 0 {
 		sim.Logger.Logf("%s%s", fixLength(string(sim.Domain), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
 		for i, sym := range sim.State.XSymbols() {
 			if len(sim.State.USymbols()) == 0 && i == len(sim.State.XSymbols())-1 {
-				sim.Logger.Logf("%s", fixLength(string(sym), sim.Log.Results.FormatLen))
+				sim.Logger.Logf("%s\n", fixLength(string(sym), sim.Log.Results.FormatLen))
 			} else {
 				sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
 			}
 		}
 		for i, sym := range sim.State.USymbols() {
 			if i == len(sim.State.USymbols())-1 {
-				sim.Logger.Logf("%s", fixLength(string(sym), sim.Log.Results.FormatLen))
+				sim.Logger.Logf("%s\n", fixLength(string(sym), sim.Log.Results.FormatLen))
 			} else {
 				sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
 			}
 		}
 	}
-	fmtlen := sim.Log.Results.FormatLen + len(sim.Log.Results.Separator)
-	formatter := fmt.Sprintf("%%%d.%dv%s", fmtlen, sim.Log.Results.Precision, sim.Log.Results.Separator)
+	fmtlen := sim.Log.Results.FormatLen
+	formatter := fmt.Sprintf("%%%d.%dg%s", fmtlen, sim.Log.Results.Precision, sim.Log.Results.Separator)
+	if sim.Log.Results.Precision == -1 {
+		formatter = fmt.Sprintf("%%%dg%s", fmtlen, sim.Log.Results.Separator)
+	}
 
+	// formatter := "%2.2g%s" //fmt.Sprintf("%%%dv%s", fmtlen, sim.Log.Results.Separator)
 	for _, s := range states {
 		sim.Logger.Logf(formatter, s.Time())
 		for i, v := range s.XVector() {
 			if i == len(s.XVector())-1 {
-				sim.Logger.Logf(formatter[:len(formatter)-len(sim.Log.Results.Separator)], v)
+				sim.Logger.Logf(formatter[:len(formatter)-len(sim.Log.Results.Separator)]+"\n", v)
 			} else {
 				sim.Logger.Logf(formatter, v)
 			}
@@ -193,7 +210,7 @@ func (sim *Simulation) logStates(states []state.State) {
 		}
 		for i, v := range s.UVector() {
 			if i == len(s.UVector())-1 {
-				sim.Logger.Logf(formatter[:len(formatter)-len(sim.Log.Results.Separator)], v)
+				sim.Logger.Logf(formatter[:len(formatter)-len(sim.Log.Results.Separator)]+"\n", v)
 			} else {
 				sim.Logger.Logf(formatter, v)
 			}
