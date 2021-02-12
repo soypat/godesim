@@ -4,6 +4,9 @@
 **/output.csv
 .vscode/*
 
+# CI
+coverage.txt
+
 ### Go ###
 # Binaries for programs and plugins
 *.exe
