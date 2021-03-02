@@ -45,27 +45,7 @@ Godesim is in early development and will naturally change as it is used more.
 
 ## [Examples](./_examples)
 
-To run an example, navigate to it's directory (under [`examples`](./_examples)) then type `go run .` in console.
-
-There are three simple examples which have been cooked up and left in `_examples` directory.
-I've been having problems running Pixel on my machine so the simulation animations are still under work.
-
-* [Simple pendulum](./_examples/simplePendulum)
-* [Double pendulum exhibiting chaotic motion](./_examples/doublePendulum)
-* [N-Body simulation](./_examples/n-body)
-
-## Imports
-
-The import signature for a godesim simulation usually looks like this:
-
-```go
-import (
-    "github.com/soypat/godesim"
-    "github.com/soypat/godesim/state" // uses gonum's `floats` subpackage
-)
-```
-
-<details><summary>ODE solver example <a href="./simulation_test.go">Code is in test file</a></summary>
+### Quadratic Solution
 
 ```go
 // Declare your rate-of-change functions using state-space symbols
@@ -104,10 +84,18 @@ for the domain `t=0` to `t=1.0` in 10 steps where `theta` and `theta-dot` are th
 t := sim.Results("time")
 theta := sim.Results("theta")
 ```
-</details>
 
 
+### Other examples
 
+To run an example, navigate to it's directory (under [`examples`](./_examples)) then type `go run .` in console.
+
+There are three simple examples which have been cooked up and left in `_examples` directory.
+I've been having problems running Pixel on my machine so the simulation animations are still under work.
+
+* [Simple pendulum](./_examples/simplePendulum)
+* [Double pendulum exhibiting chaotic motion](./_examples/doublePendulum)
+* [N-Body simulation](./_examples/n-body)
 
 ## Contributing
 
