@@ -173,11 +173,11 @@ func (sim *Simulation) handleEvents() {
 
 func (sim *Simulation) logStates(states []state.State) {
 	// log state symbols
-
+	p := len(sim.State.USymbols())
 	if sim.currentStep == 0 {
 		sim.Logger.Logf("%s%s", fixLength(string(sim.Domain), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
 		for i, sym := range sim.State.XSymbols() {
-			if len(sim.State.USymbols()) == 0 && i == len(sim.State.XSymbols())-1 {
+			if p == 0 && i == len(sim.State.XSymbols())-1 {
 				sim.Logger.Logf("%s\n", fixLength(string(sym), sim.Log.Results.FormatLen))
 			} else {
 				sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
@@ -201,7 +201,7 @@ func (sim *Simulation) logStates(states []state.State) {
 	for _, s := range states {
 		sim.Logger.Logf(formatter, s.Time())
 		for i, v := range s.XVector() {
-			if i == len(s.XVector())-1 {
+			if p == 0 && i == len(s.XVector())-1 {
 				sim.Logger.Logf(formatter[:len(formatter)-len(sim.Log.Results.Separator)]+"\n", v)
 			} else {
 				sim.Logger.Logf(formatter, v)
