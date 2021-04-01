@@ -33,6 +33,9 @@ func TestSimLoggerToCSV(t *testing.T) {
 		"y": 0,
 		"x": 1,
 	})
+	sim.SetInputFromMap(map[state.Symbol]state.Input{
+		"u": func(state.State) float64 { return 1 },
+	})
 	const nsteps = 10
 	sim.SetTimespan(0, 1, nsteps)
 	var out = &strings.Builder{}

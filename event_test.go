@@ -149,6 +149,17 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 	}
 }
 
+func TestAddEventsError(t *testing.T) {
+	sim := newWorkingSim()
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Error("should panic when adding 0 events")
+		}
+	}()
+	sim.AddEventHandlers()
+}
+
 func TestMultiEvent(t *testing.T) {
 	for _, solver := range explicitSolvers {
 		Dtheta1 := func(s state.State) float64 {
@@ -191,7 +202,10 @@ func TestMultiEvent(t *testing.T) {
 		sim.AddEventHandlers(endsim, refiner)
 		sim.Solver = solver
 		sim.Begin()
-
+		evs := sim.Events()
+		if len(evs) != 2 {
+			t.Error("expected 2 events returned")
+		}
 		time, x_res := sim.Results("time"), sim.Results("theta")
 
 		x_expected := applyFunc(time, func(v float64) float64 { return math.Pow(v, 3) })
@@ -252,4 +266,5 @@ func TestEventErrors(t *testing.T) {
 		}
 	}()
 	sim.Begin()
+
 }

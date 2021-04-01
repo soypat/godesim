@@ -222,6 +222,98 @@ func recoverSimTest(sim *Simulation) (i interface{}) {
 	return nil
 }
 
+// Provides a simulation with identity differential
+// equations for state `x` and input `u`
+func newWorkingSim() *Simulation {
+	sim := New()
+	sim.SetDiffFromMap(map[state.Symbol]state.Diff{
+		"x": func(state.State) float64 { return 1 },
+	})
+	sim.SetX0FromMap(map[state.Symbol]float64{
+		"x": 1,
+	})
+	sim.SetInputFromMap(map[state.Symbol]state.Input{
+		"u": func(state.State) float64 { return 1 },
+	})
+	sim.SetTimespan(0, 1., 10)
+	return sim
+}
+func TestWorkingSim(t *testing.T) {
+	sim := newWorkingSim()
+	err := recoverSimTest(sim)
+	if err != nil {
+		t.Error("other tests depend on this not failing")
+	}
+}
+
+func TestResultsNotEmpty(t *testing.T) {
+	// create a simulation and run it succesfully
+	sim := newWorkingSim()
+	sim.Begin()
+	// attempt to run it again
+	err := recoverSimTest(sim)
+	if err == nil {
+		t.Error("simulation should have prevented a run when results not empty")
+	}
+}
+
+func TestNilSolver(t *testing.T) {
+	sim := newWorkingSim()
+	sim.Solver = nil
+	err := recoverSimTest(sim)
+	if err == nil {
+		t.Error("simulation got a nil solver and did not panic")
+	}
+}
+func TestBadDomainName(t *testing.T) {
+	sim := newWorkingSim()
+	sim.Config.Domain = ""
+	err := recoverSimTest(sim)
+	if err == nil {
+		t.Error("simulation got a empty domain name and did not panic")
+	}
+}
+func TestTooFewAlgorithmSteps(t *testing.T) {
+	sim := newWorkingSim()
+	sim.Config.Algorithm.Steps = 0
+	err := recoverSimTest(sim)
+	if err == nil {
+		t.Error("simulation got 0 algo steps and did not panic")
+	}
+}
+
+func TestSymbolNotFoundInResults(t *testing.T) {
+	sim := newWorkingSim()
+	sim.Begin()
+
+	err := recoverSimResults(sim, "unknown")
+	if err == nil {
+		t.Error("should panic if symbol not found in results")
+	}
+}
+
+func recoverSimResults(sim *Simulation, resultname state.Symbol) (i interface{}) {
+	defer func() {
+		i = recover()
+	}()
+	sim.Results(resultname)
+	return nil
+}
+
+func TestBadStateDiff(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Error("panic expected when StateDiff called on state/function of different lengths")
+		}
+	}()
+	F := state.Diffs{
+		func(s state.State) float64 { return 1 },
+	}
+	s := state.New()
+	StateDiff(F, s)
+}
+
 func applyFunc(sli []float64, f func(float64) float64) []float64 {
 	res := make([]float64, len(sli))
 	for i, v := range sli {
