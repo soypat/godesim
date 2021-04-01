@@ -163,7 +163,7 @@ func (sim *Simulation) handleEvents() {
 				State state.State
 			}{Label: handler.Label(), State: sim.State.Clone()})
 		} else if err.Error() != ErrorRemove.Error() {
-			sim.Logger.Logf("error in simulation event: %s", err)
+			panic(err)
 		}
 		// we always remove event after applying it to simulation
 		sim.eventers = append(sim.eventers[:i], sim.eventers[i+1:]...)

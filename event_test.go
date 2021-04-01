@@ -1,19 +1,18 @@
-package godesim_test
+package godesim
 
 import (
 	"math"
 	"testing"
 
-	"github.com/soypat/godesim"
 	"github.com/soypat/godesim/state"
 )
 
 type TypicalEventer struct {
-	action func(state.State) func(*godesim.Simulation) error
+	action func(state.State) func(*Simulation) error
 	label  string
 }
 
-func (ev TypicalEventer) Event(s state.State) func(*godesim.Simulation) error {
+func (ev TypicalEventer) Event(s state.State) func(*Simulation) error {
 	return ev.action(s)
 }
 
@@ -27,7 +26,7 @@ func (t TypicalEventer) Label() string {
 // TestStepLen changes steplength mid-simulation.
 // Verifies change of steplength and accuracy of results for simpleInput
 func TestStepLen(t *testing.T) {
-	for _, solver := range gdsimSolvers {
+	for _, solver := range explicitSolvers {
 		Dtheta := func(s state.State) float64 {
 			return s.U("u")
 		}
@@ -35,7 +34,7 @@ func TestStepLen(t *testing.T) {
 		inputVar := func(s state.State) float64 {
 			return 1
 		}
-		sim := godesim.New()
+		sim := New()
 		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta": Dtheta,
 		})
@@ -51,11 +50,11 @@ func TestStepLen(t *testing.T) {
 		initStepLen := sim.Dt()
 		newStepLen := initStepLen * 0.25
 		tswitch := 0.5
-		var refiner godesim.Eventer = TypicalEventer{
+		var refiner Eventer = TypicalEventer{
 			label: "refine",
-			action: func(s state.State) func(*godesim.Simulation) error {
+			action: func(s state.State) func(*Simulation) error {
 				if s.Time() >= tswitch {
-					return godesim.NewStepLength(newStepLen)
+					return NewStepLength(newStepLen)
 				}
 				return nil
 			},
@@ -91,7 +90,7 @@ func TestStepLen(t *testing.T) {
 // theta-dot's solution for the IVP theta-dot(t=0)=0 is  theta-dot=t^2
 // thus theta's solution then is theta=1/3*t^3
 func TestBehaviourCubicToQuartic(t *testing.T) {
-	for _, solver := range gdsimSolvers {
+	for _, solver := range explicitSolvers {
 		Dtheta1 := func(s state.State) float64 {
 			return 6 * s.Time()
 		}
@@ -99,7 +98,7 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 			return 12 * s.Time() * s.Time()
 		}
 
-		sim := godesim.New()
+		sim := New()
 		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta":     func(s state.State) float64 { return s.X("theta-dot") },
 			"theta-dot": Dtheta1,
@@ -111,11 +110,11 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 		const ti, tf, N_steps = 0.0, 2, 10
 		sim.SetTimespan(ti, tf, N_steps)
 		tswitch := 1.
-		var quartic godesim.Eventer = TypicalEventer{
+		var quartic Eventer = TypicalEventer{
 			label: "change derivative",
-			action: func(s state.State) func(*godesim.Simulation) error {
+			action: func(s state.State) func(*Simulation) error {
 				if s.Time() >= tswitch {
-					return godesim.DiffChangeFromMap(map[state.Symbol]func(state.State) float64{
+					return DiffChangeFromMap(map[state.Symbol]func(state.State) float64{
 						"theta-dot": Dtheta2,
 					})
 				}
@@ -151,12 +150,12 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 }
 
 func TestMultiEvent(t *testing.T) {
-	for _, solver := range gdsimSolvers {
+	for _, solver := range explicitSolvers {
 		Dtheta1 := func(s state.State) float64 {
 			return 6 * s.Time()
 		}
 
-		sim := godesim.New()
+		sim := New()
 		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
 			"theta":     func(s state.State) float64 { return s.X("theta-dot") },
 			"theta-dot": Dtheta1,
@@ -171,20 +170,20 @@ func TestMultiEvent(t *testing.T) {
 		stepNew := 0.5 * stepOriginal
 		tStepRefine := 1.
 		tNewEndSim := 2.
-		var endsim godesim.Eventer = TypicalEventer{
+		var endsim Eventer = TypicalEventer{
 			label: "end sim",
-			action: func(s state.State) func(*godesim.Simulation) error {
+			action: func(s state.State) func(*Simulation) error {
 				if s.Time() >= tNewEndSim {
-					return godesim.EndSimulation //godesim.NewEvent("time up", godesim.EvEndSimulation)
+					return EndSimulation //NewEvent("time up", EvEndSimulation)
 				}
 				return nil
 			},
 		}
-		var refiner godesim.Eventer = TypicalEventer{
+		var refiner Eventer = TypicalEventer{
 			label: "refine",
-			action: func(s state.State) func(*godesim.Simulation) error {
+			action: func(s state.State) func(*Simulation) error {
 				if s.Time() >= tStepRefine {
-					return godesim.NewStepLength(stepNew)
+					return NewStepLength(stepNew)
 				}
 				return nil
 			},
@@ -220,4 +219,37 @@ func TestMultiEvent(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestEventErrors(t *testing.T) {
+
+	sim := New()
+	sim.SetX0FromMap(map[state.Symbol]float64{
+		"x": 1,
+	})
+	sim.SetDiffFromMap(map[state.Symbol]state.Diff{
+		"x": func(s state.State) float64 { return 0 },
+	})
+
+	var badEvent Eventer = TypicalEventer{
+		label: "change derivative",
+		action: func(s state.State) func(*Simulation) error {
+			return DiffChangeFromMap(map[state.Symbol]func(state.State) float64{
+				"x":     func(s state.State) float64 { return 0 },
+				"extra": func(s state.State) float64 { return 0 },
+			})
+		},
+	}
+	sim.SetTimespan(0, 1, 10)
+	sim.AddEventHandlers(badEvent)
+	if EventDone(sim) != nil {
+		t.Error("expected nil return from EventDone")
+	}
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Error("should have gotten an error from a bad event")
+		}
+	}()
+	sim.Begin()
 }

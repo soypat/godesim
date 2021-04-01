@@ -1,7 +1,5 @@
 package godesim
 
-import "math"
-
 // Timespan represents an iterable vector of evenly spaced time points.
 // Does not store state information on steps done.
 type Timespan struct {
@@ -26,15 +24,24 @@ func (ts Timespan) End() float64 {
 	return ts.end
 }
 
-// SetTimespan Set time domain (step domain) for simulation
+// SetTimespan Set time domain (step domain) for simulation.
+// Step size is given by:
+//   dt = (End - Start) / float64(Steps)
+// since Steps is the amount of points to "solve".
 func (ts *Timespan) SetTimespan(Start, End float64, Steps int) {
 	(*ts) = newTimespan(Start, End, Steps)
 }
 
-// time returns time corresponding to step in Timespan.
-func (ts Timespan) time(Step int) float64 {
-	return float64(Step)*ts.stepLength + ts.start
-}
+const (
+	// dlamchE is the machine epsilon. For IEEE this is 2^{-53}.
+	dlamchE = 1.0 / (1 << 53)
+
+	// dlamchB is the radix of the machine (the base of the number system).
+	dlamchB = 2
+
+	// dlamchP is base * eps.
+	dlamchP = dlamchB * dlamchE
+)
 
 // newTimespan generates a timespan object for simulation.
 // Steps must be minimum 1.
@@ -48,11 +55,9 @@ func newTimespan(Start, End float64, Steps int) Timespan {
 	}
 
 	dt := (End - Start) / float64(Steps)
-	if dt == 0 {
-		throwf("Timespan: Resulting time step is 0")
-	}
-	if dt <= 1e5*math.SmallestNonzeroFloat64 {
-		warnf("warning: time step %e is very small", dt)
+
+	if dt <= 2*dlamchP {
+		warnf("warning: time step %e is smaller than eps*2", dt)
 	}
 	return Timespan{
 		start:      Start,

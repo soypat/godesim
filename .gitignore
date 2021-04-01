@@ -6,7 +6,15 @@
 
 # CI
 coverage.txt
+cov.sh
+coverage.out
+coverage.txt
 
+# MATLAB
+*.m
+*.m~
+*.py
+!_assets/nr_py.m
 ### Go ###
 # Binaries for programs and plugins
 *.exe

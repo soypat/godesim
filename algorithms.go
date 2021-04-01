@@ -5,6 +5,8 @@ import (
 
 	"github.com/soypat/godesim/state"
 	"gonum.org/v1/exp/linsolve"
+	"gonum.org/v1/gonum/diff/fd"
+	"gonum.org/v1/gonum/floats"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -65,7 +67,7 @@ func RKF45Solver(sim *Simulation) []state.State {
 		// create auxiliary states for calculation
 		t := states[i].Time()
 		k2, k3, k4, k5, k6, s4, s5, err45 := states[i].CloneBlank(t+c20*h), states[i].CloneBlank(t+c30*h), states[i].CloneBlank(t+c40*h),
-			states[i].CloneBlank(t+h), states[i].CloneBlank(t+c60*h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h)
+			states[i].CloneBlank(t+c50*h), states[i].CloneBlank(t+c60*h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h)
 
 		k1 := StateDiff(sim.Diffs, states[i])
 		state.Scale(h, k1)
@@ -216,58 +218,76 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 	return states
 }
 
-// NewtonIterativeSolver Not implemented yet
-func NewtonIterativeSolver(sim *Simulation) []state.State {
-	panic("Newton solver not implemented")
-	var newtonIterationsMax = 5
+// NewtonRaphsonSolver is an implicit solver which iterates until
+// a decent error is found. Requires sim.Config.Algorithm.Error.Max
+//
+// Not tested yet
+func NewtonRaphsonSolver(sim *Simulation) []state.State {
+	var newtonIterationsMax = 100
+
+	const relaxationFactor = 1
 	n := len(sim.Diffs)
 
 	states := make([]state.State, sim.Algorithm.Steps+1)
+	states[0] = sim.State.Clone()
 	h := sim.Dt() / float64(sim.Algorithm.Steps)
 
 	residualers := make([]func(step float64, now state.State) func(next state.State) float64, n)
 	for loopi, loopsym := range sim.State.XSymbols() {
-		i, sym := loopi, loopsym
+		i, sym := loopi, loopsym // escape looping variables for closure
 		residualers[i] = func(step float64, now state.State) func(next state.State) float64 {
 			return func(next state.State) float64 {
 				return next.X(sym) - now.X(sym) - step*sim.Diffs[i](next)
 			}
 		}
 	}
-	states[0] = sim.State.Clone()
+	// initialize residual functions iteration storage
+	F := make(state.Diffs, n)
+	// Init guess
+	guess := states[0].Clone()
+	auxState := states[0].Clone()
 	for i := 0; i < len(states)-1; i++ {
-
-		guess := states[i].Clone() // first guess is previous state
+		old := guess.Clone()
 		guess.SetTime(states[i].Time() + h)
-		states[i+1] = states[i].CloneBlank(states[i].Time() + h)
-		v := 0
+		// iteration loop counter
+		iter := 0
+		ierr := 0.0
 		// |X_(g) - X_(i)| < permissible error
-		for v == 0 || (v < newtonIterationsMax && state.Norm(state.SubTo(states[i+1], guess, states[i]), 2) < sim.Config.Algorithm.Error.Max) {
+		for iter == 0 || (iter < newtonIterationsMax && ierr > sim.Config.Algorithm.Error.Max) {
 			// First propose residual functions such that
 			// F(X_(i+1)) = 0 = X_(i+1) - X_(i) - step * f(X_(i+1))
 			// where f is the vector of differential equations
-			F := make(state.Diffs, n)
 			for i := range residualers {
-				F[i] = residualers[i](h, guess)
+				F[i] = residualers[i](h, old)
 			}
 
 			// We solve  J^-1 * b  where b = F(X_(g)) and J = J(X_(g))
 			b := mat.NewVecDense(n, StateDiff(F, guess).XVector())
 			Jaux := mat.NewDense(n, n, nil)
-			state.Jacobian(Jaux, F, guess)
+			settings := &fd.JacobianSettings{Formula: fd.Forward, Step: 1e-6}
+			state.Jacobian(Jaux, F, guess, settings)
 			J := denseToBand(Jaux)
 
 			result, err := linsolve.Iterative(J, b, &linsolve.GMRES{}, &linsolve.Settings{MaxIterations: 2})
 			if err != nil {
 				throwf("error in newton iterative solver: %s", err)
 			}
-			guess.SetAllX(result.X.RawVector().Data)
-			// X_(i+1) = X_(i) - F(X_(g)) / J(X_(g)) where g are guesses
-			state.SubTo(guess, states[i], guess)
-			v++
+			auxState.SetAllX(result.X.RawVector().Data)
+
+			// X_(i+1) = X_(i) - alpha * F(X_(g)) / J(X_(g)) where g are guesses, and alpha is the relaxation factor
+			state.AddScaledTo(auxState, guess, -relaxationFactor, auxState)
+			// error calculation
+			errvec := guess.XVector()
+			floats.Sub(errvec, auxState.XVector())
+			for i := range errvec {
+				errvec[i] = math.Abs(errvec[i])
+			}
+			ierr = floats.Max(errvec)
+			guess.SetAllX(auxState.XVector())
+			iter++
 		}
 
-		states[i+1] = guess
+		states[i+1] = guess.Clone()
 	}
 
 	return states

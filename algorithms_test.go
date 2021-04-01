@@ -1,10 +1,9 @@
-package godesim_test
+package godesim
 
 import (
 	"math"
 	"testing"
 
-	"github.com/soypat/godesim"
 	"github.com/soypat/godesim/state"
 )
 
@@ -18,8 +17,8 @@ var stiffX0 = map[state.Symbol]float64{
 }
 
 func TestConvergenceRKF45(t *testing.T) {
-	sim := godesim.New()
-	sim.Solver = godesim.RKF45Solver
+	sim := New()
+	sim.Solver = RKF45Solver
 	sim.SetTimespan(0, 42., 1)
 	// set up adaptive timestep
 	sim.Algorithm.Error.Max = 1e-4
@@ -37,7 +36,7 @@ func TestConvergenceRKF45(t *testing.T) {
 // Benchmarks
 */
 func BenchmarkRK4(b *testing.B) {
-	sim := godesim.New()
+	sim := New()
 	sim.Algorithm.Steps = b.N
 	sim.SetTimespan(0, 100., 1)
 
@@ -47,8 +46,8 @@ func BenchmarkRK4(b *testing.B) {
 }
 
 func BenchmarkRK5(b *testing.B) {
-	sim := godesim.New()
-	sim.Solver = godesim.RKF45Solver
+	sim := New()
+	sim.Solver = RKF45Solver
 	sim.Algorithm.Steps = b.N
 	sim.SetTimespan(0, 100., 1)
 	// No adaptive timestepping, only 5th order RK
@@ -57,8 +56,8 @@ func BenchmarkRK5(b *testing.B) {
 	sim.Begin()
 }
 func BenchmarkRKF45(b *testing.B) {
-	sim := godesim.New()
-	sim.Solver = godesim.RKF45Solver
+	sim := New()
+	sim.Solver = RKF45Solver
 	sim.Algorithm.Steps = b.N
 	sim.SetTimespan(0, 100., 1)
 	// set up adaptive timestep
@@ -72,8 +71,8 @@ func BenchmarkRKF45(b *testing.B) {
 }
 
 func BenchmarkRKF45Tableau(b *testing.B) {
-	sim := godesim.New()
-	sim.Solver = godesim.RKF45TableauSolver
+	sim := New()
+	sim.Solver = RKF45TableauSolver
 	sim.Algorithm.Steps = b.N
 	sim.SetTimespan(0, 100., 1)
 	sim.SetDiffFromMap(stiffDiff)
@@ -81,16 +80,12 @@ func BenchmarkRKF45Tableau(b *testing.B) {
 	sim.Begin()
 }
 
-/*
 func BenchmarkNewton(b *testing.B) {
-	sim := godesim.New()
-	sim.Solver = godesim.NewtonIterativeSolver
+	sim := New()
+	sim.Solver = NewtonRaphsonSolver
 	sim.Algorithm.Steps = b.N
 	sim.SetTimespan(0, 100., 1)
 	sim.SetDiffFromMap(stiffDiff)
 	sim.SetX0FromMap(stiffX0)
 	sim.Begin()
-	v := sim.Results("x")
-	fmt.Printf("%v", v)
 }
-*/

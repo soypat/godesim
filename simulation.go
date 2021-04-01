@@ -25,10 +25,10 @@ type Simulation struct {
 	results     []state.State
 	Solver      func(sim *Simulation) []state.State
 	change      map[state.Symbol]state.Diff
-	state.Diffs
-	inputs   map[state.Symbol]state.Input
-	eventers []Eventer
-	events   []struct {
+	Diffs       state.Diffs
+	inputs      map[state.Symbol]state.Input
+	eventers    []Eventer
+	events      []struct {
 		Label string
 		State state.State
 	}
@@ -220,6 +220,8 @@ func StateDiff(F state.Diffs, S state.State) state.State {
 }
 
 // AddEventHandlers add event handlers to simulation.
+//
+// Events which return errors will stop the simulation and panic
 func (sim *Simulation) AddEventHandlers(evhand ...Eventer) {
 	if len(evhand) == 0 {
 		throwf("AddEventHandlers: can't add 0 event handlers")
