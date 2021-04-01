@@ -3,6 +3,7 @@ package godesim_test
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"testing"
@@ -76,4 +77,38 @@ func Example_quadratic() {
 	// Output:
 	//[0.000 0.100 0.200 0.300 0.400 0.500 0.600 0.700 0.800 0.900 1.000]:
 	//[0.000 0.005 0.020 0.045 0.080 0.125 0.180 0.245 0.320 0.405 0.500]
+}
+
+// Solve a stiff equation problem
+// using the Newton-Raphson method.
+// Equation being solved taken from https://en.wikipedia.org/wiki/Stiff_equation
+// Do note that the accuracy for stiff problems is reduced greatly for conventional
+// methods.
+//  y'(t) = -15*y(t)
+//  solution: y(t) = exp(-15*t)
+func Example_implicit() {
+	sim := godesim.New()
+	tau := -15.
+	solution := func(x []float64) []float64 {
+		sol := make([]float64, len(x))
+		for i := range x {
+			sol[i] = math.Exp(tau * x[i])
+		}
+		return sol
+	}
+	sim.SetDiffFromMap(map[state.Symbol]state.Diff{
+		"y": func(s state.State) float64 {
+			return tau * s.X("y")
+		},
+	})
+	sim.SetX0FromMap(map[state.Symbol]float64{
+		"y": 1,
+	})
+	sim.SetTimespan(0.0, 0.5, 15)
+	sim.Begin()
+	fmt.Printf("domain  :%0.3f:\nresult  :%0.3f\nsolution:%0.3f", sim.Results("time"), sim.Results("y"), solution(sim.Results("time")))
+	// Output:
+	//domain  :[0.000 0.033 0.067 0.100 0.133 0.167 0.200 0.233 0.267 0.300 0.333 0.367 0.400 0.433 0.467 0.500]:
+	//result  :[1.000 0.607 0.368 0.223 0.136 0.082 0.050 0.030 0.018 0.011 0.007 0.004 0.002 0.002 0.001 0.001]
+	//solution:[1.000 0.607 0.368 0.223 0.135 0.082 0.050 0.030 0.018 0.011 0.007 0.004 0.002 0.002 0.001 0.001]
 }
