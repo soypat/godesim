@@ -63,7 +63,6 @@ func (sim *Simulation) verify() {
 		} else {
 			throwf("Simulation: X State is inconsistent for %v and %d cases. Match X Change with State Symbols", symsX[nanidx[0]], len(nanidx)-1)
 		}
-		panic("should be unreachable")
 	}
 	if floats.HasNaN(consU) {
 		nanidx, _ := floats.Find([]int{}, math.IsNaN, consU, -1)
@@ -72,7 +71,6 @@ func (sim *Simulation) verify() {
 		} else {
 			throwf("Simulation: U State is inconsistent for %v and %d case(s). Match U Inputs with State Symbols", symsU[nanidx[0]], len(nanidx)-1)
 		}
-		panic("should be unreachable")
 	}
 }
 
@@ -183,13 +181,14 @@ func (sim *Simulation) logStates(states []state.State) {
 				sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
 			}
 		}
-		for i, sym := range sim.State.USymbols() {
-			if i == len(sim.State.USymbols())-1 {
-				sim.Logger.Logf("%s\n", fixLength(string(sym), sim.Log.Results.FormatLen))
-			} else {
-				sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
-			}
-		}
+		// This never really fails as U inputs are set once, no consistency checking needed
+		// for i, sym := range sim.State.USymbols() {
+		// 	if i == len(sim.State.USymbols())-1 {
+		// 		sim.Logger.Logf("%s\n", fixLength(string(sym), sim.Log.Results.FormatLen))
+		// 	} else {
+		// 		sim.Logger.Logf("%s%s", fixLength(string(sym), sim.Log.Results.FormatLen), sim.Log.Results.Separator)
+		// 	}
+		// }
 	}
 	fmtlen := sim.Log.Results.FormatLen
 	formatter := fmt.Sprintf("%%%d.%dg%s", fmtlen, sim.Log.Results.Precision, sim.Log.Results.Separator)

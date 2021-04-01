@@ -1,7 +1,6 @@
 package godesim
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -169,6 +168,16 @@ func TestTimespanErrors(t *testing.T) {
 			t.Errorf("timespan should have panic'd with %#v", tests[i])
 		}
 	}
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Error("timespan should have panic'd with no timespan")
+		}
+	}()
+	sim := New()
+	sim.SetDiffFromMap(map[state.Symbol]state.Diff{"x": nil})
+	sim.SetX0FromMap(map[state.Symbol]float64{"x": 1})
+	sim.Begin()
 }
 
 func recoverTimespanTest(Start, End float64, Steps int) (i interface{}) {
@@ -180,32 +189,37 @@ func recoverTimespanTest(Start, End float64, Steps int) (i interface{}) {
 }
 
 func TestBadEquations(t *testing.T) {
+	var id = func(state.State) float64 { return 1 }
+	var tests = []struct {
+		eq map[state.Symbol]state.Diff
+		x0 map[state.Symbol]float64
+		u  map[state.Symbol]state.Input
+	}{
+		{eq: map[state.Symbol]state.Diff{"x": id, "y": id}, x0: map[state.Symbol]float64{"u": 1}},
+		{eq: map[state.Symbol]state.Diff{"x": id}, x0: map[state.Symbol]float64{"y": 1}},
+		{eq: map[state.Symbol]state.Diff{"x": id}},
+		{x0: map[state.Symbol]float64{"y": 1}},
+	}
 
+	for i := range tests {
+		sim := New()
+		sim.SetTimespan(0, 1, 10)
+		sim.SetDiffFromMap(tests[i].eq)
+		sim.SetX0FromMap(tests[i].x0)
+		sim.SetInputFromMap(tests[i].u)
+		err := recoverSimTest(sim)
+		if err == nil {
+			t.Errorf("sim should have panic'd with %#v", tests[i])
+		}
+	}
 }
 
-// Solves a simple system of equations of the form
-//  Dtheta     = theta_dot
-//  Dtheta_dot = 1
-func Example_quadratic() {
-	sim := New()
-	sim.SetDiffFromMap(map[state.Symbol]state.Diff{
-		"theta": func(s state.State) float64 {
-			return s.X("theta-dot")
-		},
-		"theta-dot": func(s state.State) float64 {
-			return 1
-		},
-	})
-	sim.SetX0FromMap(map[state.Symbol]float64{
-		"theta":     0,
-		"theta-dot": 0,
-	})
-	sim.SetTimespan(0.0, 1.0, 10)
+func recoverSimTest(sim *Simulation) (i interface{}) {
+	defer func() {
+		i = recover()
+	}()
 	sim.Begin()
-	fmt.Printf("%0.3f:\n%0.3f", sim.Results("time"), sim.Results("theta"))
-	// Output:
-	//[0.000 0.100 0.200 0.300 0.400 0.500 0.600 0.700 0.800 0.900 1.000]:
-	//[0.000 0.005 0.020 0.045 0.080 0.125 0.180 0.245 0.320 0.405 0.500]
+	return nil
 }
 
 func applyFunc(sli []float64, f func(float64) float64) []float64 {

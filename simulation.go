@@ -39,19 +39,8 @@ type Simulation struct {
 // Set with simulation.SetConfig method
 type Config struct {
 	// Domain is symbol name for step variable. Default is `time`
-	Domain state.Symbol `yaml:"domain"`
-	Log    struct {
-		Results struct {
-			AllStates bool
-			FormatLen int    `yaml:"format_len"`
-			Separator string `yaml:"separator"`
-			// Defines X in formatter %a.Xg for floating point values.
-			// A value of -1 specifies default precision
-			Precision int `yaml:"prec"`
-			// EventPadding int    `yaml:"event_padding"`
-			// EventPrefix  string `yaml:"event_prefix"`
-		} `yaml:"results"`
-	} `yaml:"log"`
+	Domain    state.Symbol `yaml:"domain"`
+	Log       LoggerOptions
 	Behaviour struct {
 		StepDelay time.Duration `yaml:"delay"`
 	} `yaml:"behaviour"`

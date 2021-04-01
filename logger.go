@@ -6,6 +6,19 @@ import (
 	"strings"
 )
 
+type LoggerOptions struct {
+	Results struct {
+		AllStates bool
+		FormatLen int    `yaml:"format_len"`
+		Separator string `yaml:"separator"`
+		// Defines X in formatter %a.Xg for floating point values.
+		// A value of -1 specifies default precision
+		Precision int `yaml:"prec"`
+		// EventPadding int    `yaml:"event_padding"`
+		// EventPrefix  string `yaml:"event_prefix"`
+	} `yaml:"results"`
+}
+
 // Logger accumulates messages during simulation
 // run and writes them to Output once simulation finishes.
 type Logger struct {
