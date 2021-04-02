@@ -39,7 +39,7 @@ Godesim is in early development and will naturally change as it is used more.
 | Non-linear solvers | 🚦️ | Suite of ODE solvers available. |
 | Non-autonomous support | 🚦️ | `U` vector which need not a defined differential equation like `X` does.|
 | Event driver | 🚦️ | Eventer interface implemented. |
-| Stiff solver | 🏗️ | Working on Newton implementation of Euler-Backward. |
+| Stiff solver | 🚦️ | Newton-Raphson algorithm implemented and tested. |
 
 
 

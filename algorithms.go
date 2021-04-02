@@ -218,14 +218,20 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 	return states
 }
 
-// NewtonRaphsonSolver is an implicit solver which iterates until
-// a decent error is found. Requires sim.Config.Algorithm.Error.Max
+// NewtonRaphsonSolver is an implicit solver which may calculate
+// the jacobian several times on each algorithm step.
 //
-// Not tested yet
+// sim.Algorithm.Error.Max should be set to a value above 0 for
+// good run
 func NewtonRaphsonSolver(sim *Simulation) []state.State {
-	var newtonIterationsMax = 100
-
-	const relaxationFactor = 1
+	if sim.Algorithm.Error.Max <= 0 {
+		throwf("set config Algorithm.Error.Max to a value above 0 to use NewtonRaphson method")
+	}
+	// TODO add relaxation factor and iterationMax to algorithm config.
+	const (
+		relaxationFactor    = 1
+		newtonIterationsMax = 100
+	)
 	n := len(sim.Diffs)
 
 	states := make([]state.State, sim.Algorithm.Steps+1)
