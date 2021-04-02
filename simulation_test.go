@@ -28,19 +28,19 @@ func TestQuadratic(t *testing.T) {
 			"theta":  0,
 			"Dtheta": 0,
 		})
-		const N_steps = 10
+		const NSteps = 10
 		sim.Solver = solver
-		sim.SetTimespan(0.0, 1, N_steps)
+		sim.SetTimespan(0.0, 1, NSteps)
 
 		sim.Begin()
 
 		time, x_res := sim.Results("time"), sim.Results("theta")
-		x_quad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
-		if len(time) != N_steps+1 || sim.Len() != N_steps {
-			t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+		xQuad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
+		if len(time) != NSteps+1 || sim.Len() != NSteps {
+			t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
 		}
-		for i := range x_quad {
-			if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+		for i := range xQuad {
+			if math.Abs(xQuad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
 				t.Errorf("incorrect curve profile for test %s", t.Name())
 			}
 		}
@@ -67,17 +67,17 @@ func TestSimpleInput(t *testing.T) {
 			"u": inputVar,
 		})
 		sim.Solver = solver
-		const N_steps = 5
-		sim.SetTimespan(0.0, 1, N_steps)
+		const NSteps = 5
+		sim.SetTimespan(0.0, 1, NSteps)
 		sim.Begin()
 
-		time, x_res := sim.Results("time"), sim.Results("theta")
-		x_quad := applyFunc(time, func(v float64) float64 { return v /* solution is theta(t) = t*/ })
-		if len(time) != N_steps+1 {
-			t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+		time, xResults := sim.Results("time"), sim.Results("theta")
+		xQuad := applyFunc(time, func(v float64) float64 { return v /* solution is theta(t) = t*/ })
+		if len(time) != NSteps+1 {
+			t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
 		}
-		for i := range x_quad {
-			if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+		for i := range xQuad {
+			if math.Abs(xQuad[i]-xResults[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
 				t.Errorf("incorrect curve profile for test %s", t.Name())
 			}
 		}
@@ -97,19 +97,19 @@ func TestNewtonRaphson_stiff(t *testing.T) {
 	})
 	sim.Solver = NewtonRaphsonSolver
 	sim.Config.Algorithm.Error.Max = 1e-6
-	const N_steps = 50
-	sim.SetTimespan(0.0, 1, N_steps)
+	const NSteps = 50
+	sim.SetTimespan(0.0, 1, NSteps)
 	sim.Begin()
 
-	time, x_res := sim.Results("time"), sim.Results("y")
+	time, xResults := sim.Results("time"), sim.Results("y")
 	solution := applyFunc(time, func(v float64) float64 { return math.Exp(tau * v) })
-	if len(time) != N_steps+1 {
-		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+	if len(time) != NSteps+1 {
+		t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
 	}
 	permissibleErr := sim.Dt() * 4
 	for i := range solution {
-		if math.Abs(solution[i]-x_res[i]) > permissibleErr {
-			t.Errorf("incorrect curve profile for test %s. got %0.3f. want %0.3f +/-%0.4g", t.Name(), x_res[i], solution[i], permissibleErr)
+		if math.Abs(solution[i]-xResults[i]) > permissibleErr {
+			t.Errorf("incorrect curve profile for test %s. got %0.3f. want %0.3f +/-%0.4g", t.Name(), xResults[i], solution[i], permissibleErr)
 		}
 	}
 }
@@ -136,19 +136,19 @@ func TestNewtonRaphson_chemistry(t *testing.T) {
 
 	sim.Solver = NewtonRaphsonSolver
 	sim.Config.Algorithm.Error.Max = 1e-6
-	const N_steps = 600 * 2
-	sim.SetTimespan(0.0, 600, N_steps) // ten minutes simulated in 0.5 steps
+	const NSteps = 600 * 2
+	sim.SetTimespan(0.0, 600, NSteps) // ten minutes simulated in 0.5 steps
 	sim.Begin()
 
-	time, x_res := sim.Results("time"), sim.Results("y1")
-	time, x_res = time[1:], x_res[1:] // exclude first point (is singularity for approximate solution)
+	time, xResults := sim.Results("time"), sim.Results("y1")
+	time, xResults = time[1:], xResults[1:] // exclude first point (is singularity for approximate solution)
 	solution := applyFunc(time, y1approx)
-	if len(time) != N_steps {
-		t.Errorf("Domain is not of length %d. got %d", N_steps+1, len(time))
+	if len(time) != NSteps {
+		t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
 	}
 	for i := range solution {
-		if math.Abs(solution[i]-x_res[i]) > 5e-3 {
-			t.Errorf("incorrect curve profile for test %s. got %0.3f. want %0.3f", t.Name(), x_res[i], solution[i])
+		if math.Abs(solution[i]-xResults[i]) > 5e-3 {
+			t.Errorf("incorrect curve profile for test %s. got %0.3f. want %0.3f", t.Name(), xResults[i], solution[i])
 		}
 	}
 }
@@ -247,7 +247,7 @@ func TestWorkingSim(t *testing.T) {
 }
 
 func TestResultsNotEmpty(t *testing.T) {
-	// create a simulation and run it succesfully
+	// create a simulation and run it successfully
 	sim := newWorkingSim()
 	sim.Begin()
 	// attempt to run it again

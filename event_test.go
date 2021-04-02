@@ -107,8 +107,8 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 			"theta":     0,
 			"theta-dot": 0,
 		})
-		const ti, tf, N_steps = 0.0, 2, 10
-		sim.SetTimespan(ti, tf, N_steps)
+		const ti, tf, NSteps = 0.0, 2, 10
+		sim.SetTimespan(ti, tf, NSteps)
 		tswitch := 1.
 		var quartic Eventer = TypicalEventer{
 			label: "change derivative",
@@ -125,25 +125,25 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 		sim.Solver = solver
 		sim.Begin()
 
-		time, x_res := sim.Results("time"), sim.Results("theta")
+		time, xResults := sim.Results("time"), sim.Results("theta")
 
-		x_expected := applyFunc(time, func(v float64) float64 {
+		xExpected := applyFunc(time, func(v float64) float64 {
 			if v > tswitch {
 				return math.NaN() // I haven't figured out exact solution after switching equation
 			}
 			return math.Pow(v, 3)
 		})
 
-		if len(time) != len(x_res) {
+		if len(time) != len(xResults) {
 			t.Error("length of time and theta vectors should be the same")
 		}
 		for i := range time {
-			diff := x_res[i] - x_expected[i]
+			diff := xResults[i] - xExpected[i]
 			if math.Abs(diff) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
 				if time[i] > tswitch {
 					continue // I haven't figured the exact solution after tswitch
 				}
-				t.Errorf("incorrect curve profile for test %s. t=%.2f Expected %.4f, got %.4f", t.Name(), time[i], x_expected[i], x_res[i])
+				t.Errorf("incorrect curve profile for test %s. t=%.2f Expected %.4f, got %.4f", t.Name(), time[i], xExpected[i], xResults[i])
 			}
 		}
 	}
@@ -175,8 +175,8 @@ func TestMultiEvent(t *testing.T) {
 			"theta":     0,
 			"theta-dot": 0,
 		})
-		const ti, tf, N_steps = 0.0, 3, 15
-		sim.SetTimespan(ti, tf, N_steps)
+		const ti, tf, NSteps = 0.0, 3, 15
+		sim.SetTimespan(ti, tf, NSteps)
 		stepOriginal := sim.Dt()
 		stepNew := 0.5 * stepOriginal
 		tStepRefine := 1.
@@ -206,10 +206,10 @@ func TestMultiEvent(t *testing.T) {
 		if len(evs) != 2 {
 			t.Error("expected 2 events returned")
 		}
-		time, x_res := sim.Results("time"), sim.Results("theta")
+		time, xResults := sim.Results("time"), sim.Results("theta")
 
-		x_expected := applyFunc(time, func(v float64) float64 { return math.Pow(v, 3) })
-		if len(time) != len(x_res) {
+		xExpected := applyFunc(time, func(v float64) float64 { return math.Pow(v, 3) })
+		if len(time) != len(xResults) {
 			t.Error("length of time and theta vectors should be the same")
 			t.FailNow()
 		}
@@ -217,9 +217,9 @@ func TestMultiEvent(t *testing.T) {
 			t.Errorf("simulation end event not triggered at domain point. Expected %.3f, got %.3f", tNewEndSim, time[len(time)-1])
 		}
 		for i := range time {
-			diff := x_res[i] - x_expected[i]
+			diff := xResults[i] - xExpected[i]
 			if math.Abs(diff) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
-				t.Errorf("incorrect curve profile for test %s. t=%.2f Expected %.4f, got %.4f", t.Name(), time[i], x_expected[i], x_res[i])
+				t.Errorf("incorrect curve profile for test %s. t=%.2f Expected %.4f, got %.4f", t.Name(), time[i], xExpected[i], xResults[i])
 			}
 			if i == 0 {
 				continue
