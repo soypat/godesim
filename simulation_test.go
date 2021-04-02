@@ -8,10 +8,53 @@ import (
 )
 
 // add all explicit testable solvers here
-var explicitSolvers = []func(*Simulation) []state.State{RK4Solver, RKF45Solver, RKF45TableauSolver}
+// var gdsimSolvers = []func(*Simulation) []state.State{RK4Solver, RKF45Solver, RKF45TableauSolver, NewtonRaphsonSolver}
 
+var gdsimSolvers = []struct {
+	name string
+	f    func(*Simulation) []state.State
+	err  func(stepsize, iteration float64) float64
+}{
+	{name: "rk4", f: RK4Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
+	{name: "rkf45", f: RKF45Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
+	{name: "rkf45tableau", f: RKF45TableauSolver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
+	// Newton raphson error is frighteningly high because quadratic functions are tested near 0.
+	// This is the bane of Newton's method because
+	//   1. the second derivative is high
+	//   2. The derivative near 0 is close to 0.
+	// The result is very bad convergence unless a small step is used. For these problems
+	// explicit methods are much more suitable.
+	{name: "newton", f: NewtonRaphsonSolver, err: func(h, i float64) float64 { return 2 * h * i }},
+}
+
+func TestQuadTime(t *testing.T) {
+	for _, solver := range gdsimSolvers {
+		sim := New()
+		sim.SetDiffFromMap(map[state.Symbol]state.Diff{
+			"theta": func(s state.State) float64 { return s.Time() },
+		})
+		sim.SetX0FromMap(map[state.Symbol]float64{
+			"theta": 0,
+		})
+		const NSteps = 10
+		sim.Solver = solver.f
+		sim.SetTimespan(0.0, 1, NSteps)
+		sim.Begin()
+
+		time, xResults := sim.Results("time"), sim.Results("theta")
+		xQuad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
+		if len(time) != NSteps+1 || sim.Len() != NSteps {
+			t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
+		}
+		for i := range xQuad {
+			if math.Abs(xQuad[i]-xResults[i]) > solver.err(sim.Dt(), float64(i)) {
+				t.Errorf("%s:curve expected %6.4g, got %6.4g", solver.name, xQuad[i], xResults[i])
+			}
+		}
+	}
+}
 func TestQuadratic(t *testing.T) {
-	for _, solver := range explicitSolvers {
+	for _, solver := range gdsimSolvers {
 		Dtheta := func(s state.State) float64 {
 			return s.X("Dtheta")
 		}
@@ -29,7 +72,7 @@ func TestQuadratic(t *testing.T) {
 			"Dtheta": 0,
 		})
 		const NSteps = 10
-		sim.Solver = solver
+		sim.Solver = solver.f
 		sim.SetTimespan(0.0, 1, NSteps)
 
 		sim.Begin()
@@ -40,15 +83,15 @@ func TestQuadratic(t *testing.T) {
 			t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
 		}
 		for i := range xQuad {
-			if math.Abs(xQuad[i]-xResults[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
-				t.Errorf("incorrect curve profile for test %s", t.Name())
+			if math.Abs(xQuad[i]-xResults[i]) > solver.err(sim.Dt(), float64(i)) {
+				t.Errorf("%s:curve expected %6.4g, got %6.4g", solver.name, xQuad[i], xResults[i])
 			}
 		}
 	}
 }
 
 func TestSimpleInput(t *testing.T) {
-	for _, solver := range explicitSolvers {
+	for _, solver := range gdsimSolvers {
 		Dtheta := func(s state.State) float64 {
 			return s.U("u")
 		}
@@ -66,7 +109,7 @@ func TestSimpleInput(t *testing.T) {
 		sim.SetInputFromMap(map[state.Symbol]state.Input{
 			"u": inputVar,
 		})
-		sim.Solver = solver
+		sim.Solver = solver.f
 		const NSteps = 5
 		sim.SetTimespan(0.0, 1, NSteps)
 		sim.Begin()
@@ -77,8 +120,8 @@ func TestSimpleInput(t *testing.T) {
 			t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
 		}
 		for i := range xQuad {
-			if math.Abs(xQuad[i]-xResults[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
-				t.Errorf("incorrect curve profile for test %s", t.Name())
+			if math.Abs(xQuad[i]-xResults[i]) > solver.err(sim.Dt(), float64(i)) {
+				t.Errorf("%s:curve expected %6.4g, got %6.4g", solver.name, xQuad[i], xResults[i])
 			}
 		}
 	}
@@ -109,7 +152,7 @@ func TestNewtonRaphson_stiff(t *testing.T) {
 	permissibleErr := sim.Dt() * 4
 	for i := range solution {
 		if math.Abs(solution[i]-xResults[i]) > permissibleErr {
-			t.Errorf("incorrect curve profile for test %s. got %0.3f. want %0.3f +/-%0.4g", t.Name(), xResults[i], solution[i], permissibleErr)
+			t.Errorf("newton: got %0.3f. want %0.3f +/-%0.4g", xResults[i], solution[i], permissibleErr)
 		}
 	}
 }
@@ -148,7 +191,7 @@ func TestNewtonRaphson_chemistry(t *testing.T) {
 	}
 	for i := range solution {
 		if math.Abs(solution[i]-xResults[i]) > 5e-3 {
-			t.Errorf("incorrect curve profile for test %s. got %0.3f. want %0.3f", t.Name(), xResults[i], solution[i])
+			t.Errorf("newton: got %0.3f. want %0.3f", xResults[i], solution[i])
 		}
 	}
 }

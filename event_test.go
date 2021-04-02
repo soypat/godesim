@@ -26,7 +26,7 @@ func (ev TypicalEventer) Label() string {
 // TestStepLen changes steplength mid-simulation.
 // Verifies change of steplength and accuracy of results for simpleInput
 func TestStepLen(t *testing.T) {
-	for _, solver := range explicitSolvers {
+	for _, solver := range gdsimSolvers {
 		Dtheta := func(s state.State) float64 {
 			return s.U("u")
 		}
@@ -60,7 +60,7 @@ func TestStepLen(t *testing.T) {
 			},
 		}
 		sim.AddEventHandlers(refiner)
-		sim.Solver = solver
+		sim.Solver = solver.f
 		sim.Begin()
 
 		time, xResults := sim.Results("time"), sim.Results("theta")
@@ -79,7 +79,7 @@ func TestStepLen(t *testing.T) {
 				t.Errorf("expected stepLength %.4f. Got %.4f", expectedLen, StepLen)
 			}
 			// Also test accuracy of results
-			if math.Abs(xQuad[i]-xResults[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+			if math.Abs(xQuad[i]-xResults[i]) > solver.err(sim.Dt(), float64(i)) {
 				t.Errorf("incorrect curve profile for test %s", t.Name())
 			}
 		}
@@ -90,7 +90,7 @@ func TestStepLen(t *testing.T) {
 // theta-dot's solution for the IVP theta-dot(t=0)=0 is  theta-dot=t^2
 // thus theta's solution then is theta=1/3*t^3
 func TestBehaviourCubicToQuartic(t *testing.T) {
-	for _, solver := range explicitSolvers {
+	for _, solver := range gdsimSolvers {
 		Dtheta1 := func(s state.State) float64 {
 			return 6 * s.Time()
 		}
@@ -122,7 +122,7 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 			},
 		}
 		sim.AddEventHandlers(quartic)
-		sim.Solver = solver
+		sim.Solver = solver.f
 		sim.Begin()
 
 		time, xResults := sim.Results("time"), sim.Results("theta")
@@ -139,11 +139,11 @@ func TestBehaviourCubicToQuartic(t *testing.T) {
 		}
 		for i := range time {
 			diff := xResults[i] - xExpected[i]
-			if math.Abs(diff) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+			if math.Abs(diff) > solver.err(sim.Dt(), float64(i)) {
 				if time[i] > tswitch {
-					continue // I haven't figured the exact solution after tswitch
+					break // I haven't figured the exact solution after tswitch
 				}
-				t.Errorf("incorrect curve profile for test %s. t=%.2f Expected %.4f, got %.4f", t.Name(), time[i], xExpected[i], xResults[i])
+				t.Errorf("%s:curve expected %6.4g, got %6.4g", solver.name, xExpected[i], xResults[i])
 			}
 		}
 	}
@@ -161,7 +161,7 @@ func TestAddEventsError(t *testing.T) {
 }
 
 func TestMultiEvent(t *testing.T) {
-	for _, solver := range explicitSolvers {
+	for _, solver := range gdsimSolvers {
 		Dtheta1 := func(s state.State) float64 {
 			return 6 * s.Time()
 		}
@@ -175,7 +175,11 @@ func TestMultiEvent(t *testing.T) {
 			"theta":     0,
 			"theta-dot": 0,
 		})
-		const ti, tf, NSteps = 0.0, 3, 15
+		// The test is sensitive to these values since
+		// it expects a discrete point around tNewEndSim and tStepRefine
+		// to apply events. Of course, depending on domain subdivision, the
+		// point at which the event is applied may be just under a step-length away
+		const ti, tf, NSteps = 0.0, 3, 30
 		sim.SetTimespan(ti, tf, NSteps)
 		stepOriginal := sim.Dt()
 		stepNew := 0.5 * stepOriginal
@@ -184,7 +188,7 @@ func TestMultiEvent(t *testing.T) {
 		var endsim Eventer = TypicalEventer{
 			label: "end sim",
 			action: func(s state.State) func(*Simulation) error {
-				if s.Time() >= tNewEndSim {
+				if s.Time() >= tNewEndSim-1e-4 {
 					return EndSimulation //NewEvent("time up", EvEndSimulation)
 				}
 				return nil
@@ -193,14 +197,14 @@ func TestMultiEvent(t *testing.T) {
 		var refiner Eventer = TypicalEventer{
 			label: "refine",
 			action: func(s state.State) func(*Simulation) error {
-				if s.Time() >= tStepRefine {
+				if s.Time() >= tStepRefine-1e-4 {
 					return NewStepLength(stepNew)
 				}
 				return nil
 			},
 		}
 		sim.AddEventHandlers(endsim, refiner)
-		sim.Solver = solver
+		sim.Solver = solver.f
 		sim.Begin()
 		evs := sim.Events()
 		if len(evs) != 2 {
@@ -218,8 +222,8 @@ func TestMultiEvent(t *testing.T) {
 		}
 		for i := range time {
 			diff := xResults[i] - xExpected[i]
-			if math.Abs(diff) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
-				t.Errorf("incorrect curve profile for test %s. t=%.2f Expected %.4f, got %.4f", t.Name(), time[i], xExpected[i], xResults[i])
+			if math.Abs(diff) > solver.err(sim.Dt(), float64(i)) {
+				t.Errorf("%s:curve expected %6.4g, got %6.4g", solver.name, xExpected[i], xResults[i])
 			}
 			if i == 0 {
 				continue

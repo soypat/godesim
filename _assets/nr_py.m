@@ -1,23 +1,23 @@
-y0 = [1,0,0]';
+y0 = [0,0]';
 guess = y0;
 
 max_iter = 100;
 tol = 1e-6;
 
 t_s = 0;
-t_e = 10*60; %	#10 minutes 
-dt = 1;
-n = floor(t_e/dt);
+t_e = 1; %	#10 minutes 
+% dt = 0.1;
+n = 20;
+dt = (t_e-t_s)/n;
 t_steps = linspace(t_s,t_e,n+1);
 
 % for storing values
-yt = zeros(3,n+1);
+yt = zeros(length(y0),n+1);
 yt(:,1) = y0;
 % Differential equations
 F = @(Y) [
-    -0.04*Y(1)+10000*Y(2)*Y(3)
-    0.04*Y(1)-10000*Y(2)*Y(3)-3e07*Y(2)^2
-    3e07*Y(2)^2
+    Y(2)
+    1
 ];
 
 relaxationFactor = 1;
@@ -42,16 +42,19 @@ close all
 b = [4.060695630083880e-02     1.968523606662947e-02     1.225548903924852e-03 -8.588160826206462e-07     4.390359279281821e-10 0 1];
 model = @(B,x) B(7) - B(1).*sqrt(x) - B(2).*log(B(6)+x) + B(3)*x + B(4)*x.^2 +B(5)*x.^3;
 
+leg = {};
+for i = 1:length(y0)
+    plot(t_steps,yt(i,:))
+    hold on
+    leg = [leg, ['y' num2str(i)]];
+end
+legend(leg)
 % semilogy(t_steps,yt(1,:))
-plot(t_steps,yt(1,:))
-hold on
-plot(t_steps,yt(2,:))
-% semilogy(t_steps,yt(2,:))
-hold on
-plot(t_steps,yt(3,:))
+
+return
 plot(t_steps, model(b,t_steps))
 % semilogy(t_steps,yt(3,:))
-legend("y_1","y_2","y_3","model1")
+
 
 
 bopt = nlinfit(t_steps(2:end),yt(1,2:end),model,b)

@@ -224,14 +224,16 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 // sim.Algorithm.Error.Max should be set to a value above 0 for
 // good run
 func NewtonRaphsonSolver(sim *Simulation) []state.State {
-	if sim.Algorithm.Error.Max <= 0 {
-		throwf("set config Algorithm.Error.Max to a value above 0 to use NewtonRaphson method")
-	}
+	sim.Algorithm.Error.Max = 1e-6
+	// if sim.Algorithm.Error.Max <= 0 {
+	// 	throwf("set config Algorithm.Error.Max to a value above 0 to use NewtonRaphson method")
+	// }
 	// TODO add relaxation factor and iterationMax to algorithm config.
 	const (
 		relaxationFactor    = 1
 		newtonIterationsMax = 100
 	)
+	adaptive := sim.Algorithm.Error.Max > 0
 	n := len(sim.Diffs)
 
 	states := make([]state.State, sim.Algorithm.Steps+1)
@@ -253,13 +255,14 @@ func NewtonRaphsonSolver(sim *Simulation) []state.State {
 	guess := states[0].Clone()
 	auxState := states[0].Clone()
 	for i := 0; i < len(states)-1; i++ {
+
 		old := guess.Clone()
 		guess.SetTime(states[i].Time() + h)
 		// iteration loop counter
 		iter := 0
 		ierr := 0.0
 		// |X_(g) - X_(i)| < permissible error
-		for iter == 0 || (iter < newtonIterationsMax && ierr > sim.Config.Algorithm.Error.Max) {
+		for iter == 0 || (adaptive && iter < newtonIterationsMax && ierr > sim.Config.Algorithm.Error.Max) {
 			// First propose residual functions such that
 			// F(X_(i+1)) = 0 = X_(i+1) - X_(i) - step * f(X_(i+1))
 			// where f is the vector of differential equations
@@ -270,7 +273,7 @@ func NewtonRaphsonSolver(sim *Simulation) []state.State {
 			// We solve  J^-1 * b  where b = F(X_(g)) and J = J(X_(g))
 			b := mat.NewVecDense(n, StateDiff(F, guess).XVector())
 			Jaux := mat.NewDense(n, n, nil)
-			settings := &fd.JacobianSettings{Formula: fd.Forward, Step: 1e-6}
+			var settings *fd.JacobianSettings = nil //&fd.JacobianSettings{Formula: fd.Forward, Step: 1e-6}
 			state.Jacobian(Jaux, F, guess, settings)
 			J := denseToBand(Jaux)
 
