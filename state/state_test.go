@@ -251,51 +251,51 @@ func TestArithmetic(t *testing.T) {
 		{gonumF: floats.Sub, stateF: Sub},
 	}
 	var testsS3to = []struct {
-		gonum_f func(x, y, z []float64) []float64
-		state_f func(x, y, z State) State
+		gonumF func(x, y, z []float64) []float64
+		stateF func(x, y, z State) State
 	}{
-		{gonum_f: floats.AddTo, state_f: AddTo},
-		{gonum_f: floats.SubTo, state_f: SubTo},
-		{gonum_f: floats.DivTo, state_f: DivTo},
-		{gonum_f: floats.MulTo, state_f: MulTo},
+		{gonumF: floats.AddTo, stateF: AddTo},
+		{gonumF: floats.SubTo, stateF: SubTo},
+		{gonumF: floats.DivTo, stateF: DivTo},
+		{gonumF: floats.MulTo, stateF: MulTo},
 	}
 	var testsCs = []struct {
-		gonum_f func(c float64, dst []float64)
-		state_f func(c float64, x State)
+		gonumF func(c float64, dst []float64)
+		stateF func(c float64, x State)
 	}{
-		{gonum_f: floats.AddConst, state_f: AddConst},
-		{gonum_f: floats.Scale, state_f: Scale},
+		{gonumF: floats.AddConst, stateF: AddConst},
+		{gonumF: floats.Scale, stateF: Scale},
 	}
 	var testsScs = []struct {
-		gonum_f func(dst []float64, c float64, x []float64)
-		state_f func(dst State, c float64, x State)
+		gonumF func(dst []float64, c float64, x []float64)
+		stateF func(dst State, c float64, x State)
 	}{
-		{gonum_f: floats.AddScaled, state_f: AddScaled},
+		{gonumF: floats.AddScaled, stateF: AddScaled},
 	}
 	var testsS2csto = []struct {
-		gonum_f func(dst, y []float64, c float64, x []float64) []float64
-		state_f func(dst, y State, c float64, x State) State
+		gonumF func(dst, y []float64, c float64, x []float64) []float64
+		stateF func(dst, y State, c float64, x State) State
 	}{
-		{gonum_f: floats.AddScaledTo, state_f: AddScaledTo},
+		{gonumF: floats.AddScaledTo, stateF: AddScaledTo},
 	}
 	var testsS = []struct {
-		gonum_f func(x []float64) float64
-		state_f func(x State) float64
+		gonumF func(x []float64) float64
+		stateF func(x State) float64
 	}{
-		{gonum_f: floats.Max, state_f: Max},
-		{gonum_f: floats.Min, state_f: Min},
+		{gonumF: floats.Max, stateF: Max},
+		{gonumF: floats.Min, stateF: Min},
 	}
 	var testsSc1 = []struct {
-		gonum_f func(x []float64, L float64) float64
-		state_f func(x State, L float64) float64
+		gonumF func(x []float64, L float64) float64
+		stateF func(x State, L float64) float64
 	}{
-		{gonum_f: floats.Norm, state_f: Norm},
+		{gonumF: floats.Norm, stateF: Norm},
 	}
 	var testsScsto = []struct {
-		gonum_f func(x []float64, c float64, y []float64) []float64
-		state_f func(x State, L float64, y State) State
+		gonumF func(x []float64, c float64, y []float64) []float64
+		stateF func(x State, L float64, y State) State
 	}{
-		{gonum_f: floats.ScaleTo, state_f: ScaleTo},
+		{gonumF: floats.ScaleTo, stateF: ScaleTo},
 	}
 	s1 := randomState("x", "y", "z", "xyz")
 	s2 := randomState("x", "y", "z", "xyz")
@@ -313,34 +313,34 @@ func TestArithmetic(t *testing.T) {
 	}
 
 	for _, test := range testsS {
-		test.gonum_f(vec1)
-		test.state_f(s1)
+		test.gonumF(vec1)
+		test.stateF(s1)
 		assertSliceStateEqual(t, s1, vec1)
 	}
 
 	for i, test := range testsCs {
 		c := float64(i + 2)
-		test.gonum_f(c, vec2)
-		test.state_f(c, s2)
+		test.gonumF(c, vec2)
+		test.stateF(c, s2)
 		assertSliceStateEqual(t, s2, vec2)
 	}
 	for i, test := range testsS2csto {
 		c := float64(i + 2)
-		vr := test.gonum_f(vec1, vec1, c, vec2)
-		sr := test.state_f(s1, s1, c, s2)
+		vr := test.gonumF(vec1, vec1, c, vec2)
+		sr := test.stateF(s1, s1, c, s2)
 		assertSliceStateEqual(t, s1, vec1)
 		assertSliceStateEqual(t, sr, vr)
 	}
 	for _, test := range testsS3to {
-		vr := test.gonum_f(vec2, vec1, vec2)
-		sr := test.state_f(s2, s1, s2)
+		vr := test.gonumF(vec2, vec1, vec2)
+		sr := test.stateF(s2, s1, s2)
 		assertSliceStateEqual(t, s2, vec2)
 		assertSliceStateEqual(t, sr, vr)
 	}
 	for i, test := range testsSc1 {
 		c := float64(i + 2)
-		vr := test.gonum_f(vec2, c)
-		sr := test.state_f(s2, c)
+		vr := test.gonumF(vec2, c)
+		sr := test.stateF(s2, c)
 		// TODO check out this NaN case
 		if vr != sr && !math.IsNaN(vr) {
 			t.Errorf("two float64 results not equal (state:%f == %f (vec)", sr, vr)
@@ -349,15 +349,15 @@ func TestArithmetic(t *testing.T) {
 	}
 	for i, test := range testsScsto {
 		c := float64(i + 2)
-		vr := test.gonum_f(vec2, c, vec1)
-		sr := test.state_f(s2, c, s1)
+		vr := test.gonumF(vec2, c, vec1)
+		sr := test.stateF(s2, c, s1)
 		assertSliceStateEqual(t, s2, vec2)
 		assertSliceStateEqual(t, sr, vr)
 	}
 	for i, test := range testsScs {
 		c := float64(i + 2)
-		test.gonum_f(vec2, c, vec1)
-		test.state_f(s2, c, s1)
+		test.gonumF(vec2, c, vec1)
+		test.stateF(s2, c, s1)
 		assertSliceStateEqual(t, s2, vec2)
 	}
 	s1.x[0] = -20

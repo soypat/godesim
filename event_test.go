@@ -16,11 +16,11 @@ func (ev TypicalEventer) Event(s state.State) func(*Simulation) error {
 	return ev.action(s)
 }
 
-func (t TypicalEventer) Label() string {
-	if t.label == "" {
+func (ev TypicalEventer) Label() string {
+	if ev.label == "" {
 		panic("empty Eventer label")
 	}
-	return t.label
+	return ev.label
 }
 
 // TestStepLen changes steplength mid-simulation.
