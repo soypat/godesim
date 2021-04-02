@@ -242,13 +242,13 @@ func randomState(syms ...Symbol) State {
 
 func TestArithmetic(t *testing.T) {
 	var testsS2 = []struct {
-		gonum_f func(x, y []float64)
-		state_f func(x, y State)
+		gonumF func(x, y []float64)
+		stateF func(x, y State)
 	}{
-		{gonum_f: floats.Mul, state_f: Mul},
-		{gonum_f: floats.Div, state_f: Div},
-		{gonum_f: floats.Add, state_f: Add},
-		{gonum_f: floats.Sub, state_f: Sub},
+		{gonumF: floats.Mul, stateF: Mul},
+		{gonumF: floats.Div, stateF: Div},
+		{gonumF: floats.Add, stateF: Add},
+		{gonumF: floats.Sub, stateF: Sub},
 	}
 	var testsS3to = []struct {
 		gonum_f func(x, y, z []float64) []float64
@@ -307,8 +307,8 @@ func TestArithmetic(t *testing.T) {
 	// vresult := make([]float64, len(vec1))
 
 	for _, test := range testsS2 {
-		test.gonum_f(vec1, vec2)
-		test.state_f(s1, s2)
+		test.gonumF(vec1, vec2)
+		test.stateF(s1, s2)
 		assertSliceStateEqual(t, s1, vec1)
 	}
 

@@ -6,6 +6,19 @@ import (
 	"strings"
 )
 
+// LoggerOptions for now permits user
+// to output formatted values to an io.Writer.
+//
+// Example of usage for csv generation:
+//  logcfg := godesim.LoggerOptions{}
+//  logcfg.Results.Separator = ","
+//  logcfg.Results.AllStates = true
+//  logcfg.Results.FormatLen = 6
+//  cfg := godesim.DefaultConfig()
+//  cfg.Log = logcfg
+//
+// Finally, set simulation config with sim.SetConfig(cfg) method
+// and set io.Writer in sim.Logger.Output
 type LoggerOptions struct {
 	Results struct {
 		AllStates bool

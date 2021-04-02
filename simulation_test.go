@@ -34,13 +34,13 @@ func TestQuadratic(t *testing.T) {
 
 		sim.Begin()
 
-		time, x_res := sim.Results("time"), sim.Results("theta")
+		time, xResults := sim.Results("time"), sim.Results("theta")
 		xQuad := applyFunc(time, func(v float64) float64 { return 1 / 2. * v * v /* solution is theta(t) = 1/2*t^2 */ })
 		if len(time) != NSteps+1 || sim.Len() != NSteps {
 			t.Errorf("Domain is not of length %d. got %d", NSteps+1, len(time))
 		}
 		for i := range xQuad {
-			if math.Abs(xQuad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+			if math.Abs(xQuad[i]-xResults[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
 				t.Errorf("incorrect curve profile for test %s", t.Name())
 			}
 		}

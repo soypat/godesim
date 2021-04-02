@@ -44,9 +44,9 @@ func TestStepLen(t *testing.T) {
 		sim.SetInputFromMap(map[state.Symbol]state.Input{
 			"u": inputVar,
 		})
-		const N_steps, ti, tf = 10, 0.0, 1.0
+		const NSteps, ti, tf = 10, 0.0, 1.0
 
-		sim.SetTimespan(ti, tf, N_steps)
+		sim.SetTimespan(ti, tf, NSteps)
 		initStepLen := sim.Dt()
 		newStepLen := initStepLen * 0.25
 		tswitch := 0.5
@@ -63,10 +63,10 @@ func TestStepLen(t *testing.T) {
 		sim.Solver = solver
 		sim.Begin()
 
-		time, x_res := sim.Results("time"), sim.Results("theta")
-		x_quad := applyFunc(time, func(v float64) float64 { return v /* solution is theta(t) = t*/ })
+		time, xResults := sim.Results("time"), sim.Results("theta")
+		xQuad := applyFunc(time, func(v float64) float64 { return v /* solution is theta(t) = t*/ })
 
-		if len(time) != len(x_res) {
+		if len(time) != len(xResults) {
 			t.Error("length of time and theta vectors should be the same")
 		}
 		expectedLen := initStepLen
@@ -79,7 +79,7 @@ func TestStepLen(t *testing.T) {
 				t.Errorf("expected stepLength %.4f. Got %.4f", expectedLen, StepLen)
 			}
 			// Also test accuracy of results
-			if math.Abs(x_quad[i]-x_res[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
+			if math.Abs(xQuad[i]-xResults[i]) > math.Pow(sim.Dt()/float64(sim.Algorithm.Steps), 4) {
 				t.Errorf("incorrect curve profile for test %s", t.Name())
 			}
 		}

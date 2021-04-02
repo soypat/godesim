@@ -80,7 +80,7 @@ func New() *Simulation {
 		Solver: RK4Solver,
 		Logger: newLogger(os.Stdout),
 	}
-	sim.Domain, sim.Algorithm.Steps, sim.Log.Results.Precision = "time", 1, -1
+	sim.Config = DefaultConfig()
 	return &sim
 }
 
@@ -88,6 +88,15 @@ func New() *Simulation {
 func (sim *Simulation) SetConfig(cfg Config) *Simulation {
 	sim.Config = cfg
 	return sim
+}
+
+// DefaultConfig returns configuration set for all new
+// simulations by New()
+func DefaultConfig() Config {
+	cfg := Config{Domain: "time"}
+	cfg.Log.Results.Precision = -1
+	cfg.Algorithm.Steps = 1
+	return cfg
 }
 
 // Begin starts simulation
