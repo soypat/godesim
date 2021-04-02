@@ -53,8 +53,8 @@ func (sim *Simulation) verify() {
 	if sim.Solver == nil {
 		throwf("Simulation: expected Simulation.Solver. got nil")
 	}
-	symsX, symsU := sim.diffSymbols(), sim.inputSymbols()
-	consX, _ := sim.State.ConsistencyX(symsX), sim.State.ConsistencyU(symsU)
+	symsX := sim.diffSymbols()             //, sim.inputSymbols()
+	consX := sim.State.ConsistencyX(symsX) //, sim.State.ConsistencyU(symsU)
 
 	if floats.HasNaN(consX) {
 		nanidx, _ := floats.Find([]int{}, math.IsNaN, consX, -1)
@@ -96,17 +96,6 @@ func (sim *Simulation) IsRunning() bool {
 func (sim *Simulation) diffSymbols() []state.Symbol {
 	syms := make([]state.Symbol, 0, len(sim.change))
 	for sym := range sim.change {
-		syms = append(syms, sym)
-	}
-	return syms
-}
-
-func (sim *Simulation) inputSymbols() []state.Symbol {
-	if len(sim.inputs) == 0 {
-		return []state.Symbol{}
-	}
-	syms := make([]state.Symbol, 0, len(sim.inputs))
-	for sym := range sim.inputs {
 		syms = append(syms, sym)
 	}
 	return syms

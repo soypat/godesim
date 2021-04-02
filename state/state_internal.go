@@ -36,5 +36,5 @@ func (s *State) has(v string, sym Symbol) bool {
 		}
 		return true
 	}
-	panic("unreachable code")
+	return false
 }

@@ -9,6 +9,10 @@ coverage.txt
 cov.sh
 coverage.out
 coverage.txt
+*coverage.txt
+*cov.sh
+*coverage.out
+*coverage.txt
 
 # MATLAB
 *.m

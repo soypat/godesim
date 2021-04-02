@@ -285,8 +285,15 @@ func TestTooFewAlgorithmSteps(t *testing.T) {
 func TestSymbolNotFoundInResults(t *testing.T) {
 	sim := newWorkingSim()
 	sim.Begin()
-
-	err := recoverSimResults(sim, "unknown")
+	err := recoverSimResults(sim, "u")
+	if err != nil {
+		t.Errorf("should have been able to find result in inputs")
+	}
+	err = recoverSimResults(sim, "x")
+	if err != nil {
+		t.Errorf("should have been able to find result in state vector")
+	}
+	err = recoverSimResults(sim, "unknown")
 	if err == nil {
 		t.Error("should panic if symbol not found in results")
 	}
