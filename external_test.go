@@ -116,6 +116,55 @@ func Example_implicit() {
 	//solution:[1.000 0.607 0.368 0.223 0.135 0.082 0.050 0.030 0.018 0.011 0.007 0.004 0.002 0.002 0.001 0.001]
 }
 
-func Example_events() {
+type TypicalEventer struct {
+	action func(state.State) func(*godesim.Simulation) error
+	label  string
+}
 
+func (ev TypicalEventer) Event(s state.State) func(*godesim.Simulation) error {
+	return ev.action(s)
+}
+
+func (ev TypicalEventer) Label() string {
+	return ev.label
+}
+
+/*
+Below is an example of Eventer implementation. `TypicalEventer` implements
+godesim's Eventer interface.
+
+	type TypicalEventer struct {
+		action func(state.State) func(*Simulation) error
+		label  string
+	}
+	func (ev TypicalEventer) Event(s state.State) func(*Simulation) error { return ev.action(s) }
+	func (ev TypicalEventer) Label() string { return ev.label }
+*/
+func Example_events() {
+	sim := godesim.New()
+	sim.SetDiffFromMap(map[state.Symbol]state.Diff{
+		"theta": func(s state.State) float64 { return 2 * s.X("theta") },
+	})
+	sim.SetX0FromMap(map[state.Symbol]float64{
+		"theta": 0,
+	})
+
+	sim.SetTimespan(0, 10., 10)
+	initStepLen := sim.Dt()
+	// We halve the step length somewhere along our simulation.
+	// this will be the event
+	newStepLen := initStepLen * 0.5
+
+	var refiner godesim.Eventer = TypicalEventer{
+		label: "refine",
+		action: func(s state.State) func(*godesim.Simulation) error {
+			if s.Time() >= 3. {
+				return godesim.NewStepLength(newStepLen)
+			}
+			return nil
+		},
+	}
+	sim.AddEventHandlers(refiner)
+	sim.Solver = godesim.NewtonRaphsonSolver
+	sim.Begin()
 }
