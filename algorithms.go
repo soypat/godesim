@@ -224,15 +224,15 @@ func RKF45TableauSolver(sim *Simulation) []state.State {
 // sim.Algorithm.Error.Max should be set to a value above 0 for
 // good run
 func NewtonRaphsonSolver(sim *Simulation) []state.State {
-	sim.Algorithm.Error.Max = 1e-6
-	// if sim.Algorithm.Error.Max <= 0 {
-	// 	throwf("set config Algorithm.Error.Max to a value above 0 to use NewtonRaphson method")
-	// }
-	// TODO add relaxation factor and iterationMax to algorithm config.
-	const (
-		relaxationFactor    = 1
-		newtonIterationsMax = 100
-	)
+	if sim.Algorithm.Error.Max <= 0 {
+		sim.Algorithm.Error.Max = 1e-5 // throwf("set config Algorithm.Error.Max to a value above 0 to use NewtonRaphson method")
+	}
+	jacMult := 1 - sim.Algorithm.RelaxationFactor
+
+	if sim.Algorithm.IterationMax <= 0 {
+		sim.Algorithm.IterationMax = 10
+	}
+
 	adaptive := sim.Algorithm.Error.Max > 0
 	n := len(sim.Diffs)
 
@@ -262,7 +262,7 @@ func NewtonRaphsonSolver(sim *Simulation) []state.State {
 		iter := 0
 		ierr := 0.0
 		// |X_(g) - X_(i)| < permissible error
-		for iter == 0 || (adaptive && iter < newtonIterationsMax && ierr > sim.Config.Algorithm.Error.Max) {
+		for iter == 0 || (adaptive && iter < sim.Algorithm.IterationMax && ierr > sim.Config.Algorithm.Error.Max) {
 			// First propose residual functions such that
 			// F(X_(i+1)) = 0 = X_(i+1) - X_(i) - step * f(X_(i+1))
 			// where f is the vector of differential equations
@@ -284,7 +284,7 @@ func NewtonRaphsonSolver(sim *Simulation) []state.State {
 			auxState.SetAllX(result.X.RawVector().Data)
 
 			// X_(i+1) = X_(i) - alpha * F(X_(g)) / J(X_(g)) where g are guesses, and alpha is the relaxation factor
-			state.AddScaledTo(auxState, guess, -relaxationFactor, auxState)
+			state.AddScaledTo(auxState, guess, -jacMult, auxState)
 			// error calculation
 			errvec := guess.XVector()
 			floats.Sub(errvec, auxState.XVector())

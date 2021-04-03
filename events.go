@@ -9,8 +9,9 @@ import (
 
 // Eventer specifies an event to be applied to simulation
 //
-// Events which return error when applied to simulation will cause the simulation
-// to panic and stop execution.
+// Events which return error when applied to simulation
+// will create a special event with the error message in the label
+// and log the information.
 type Eventer interface {
 	// Behaviour aspect of event. changing simulation
 	//

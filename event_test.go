@@ -240,7 +240,6 @@ func TestMultiEvent(t *testing.T) {
 }
 
 func TestEventErrors(t *testing.T) {
-
 	sim := New()
 	sim.SetX0FromMap(map[state.Symbol]float64{
 		"x": 1,
@@ -252,10 +251,14 @@ func TestEventErrors(t *testing.T) {
 	var badEvent Eventer = TypicalEventer{
 		label: "change derivative",
 		action: func(s state.State) func(*Simulation) error {
-			return DiffChangeFromMap(map[state.Symbol]func(state.State) float64{
+			err := DiffChangeFromMap(map[state.Symbol]func(state.State) float64{
 				"x":     func(s state.State) float64 { return 0 },
 				"extra": func(s state.State) float64 { return 0 },
 			})
+			if err != nil {
+				panic(err)
+			}
+			return nil
 		},
 	}
 	sim.SetTimespan(0, 1, 10)

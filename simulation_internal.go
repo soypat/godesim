@@ -64,6 +64,7 @@ func (sim *Simulation) verify() {
 			throwf("Simulation: X State is inconsistent for %v and %d cases. Match X Change with State Symbols", symsX[nanidx[0]], len(nanidx)-1)
 		}
 	}
+
 	// This never really fails as U inputs are set once, no consistency checking needed
 	// if floats.HasNaN(consU) {
 	// 	nanidx, _ := floats.Find([]int{}, math.IsNaN, consU, -1)
@@ -151,7 +152,12 @@ func (sim *Simulation) handleEvents() {
 				State state.State
 			}{Label: handler.Label(), State: sim.State.Clone()})
 		} else if err.Error() != ErrorRemove.Error() {
-			panic(err)
+			msg := fmt.Sprintf("error %s for %v", err, handler.Label())
+			sim.events = append(sim.events, struct {
+				Label string
+				State state.State
+			}{Label: msg, State: sim.State.Clone()})
+			sim.Logger.Logf(msg)
 		}
 		// we always remove event after applying it to simulation
 		sim.eventers = append(sim.eventers[:i], sim.eventers[i+1:]...)

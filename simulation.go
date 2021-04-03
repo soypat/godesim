@@ -57,6 +57,14 @@ type Config struct {
 			// Step.Min should override this
 			Max float64 `yaml:"max"`
 		} `yaml:"error"`
+		// Below are numerical factors
+
+		// Newton-Raphson method's convergence can benefit from a relaxationFactor between 0 and 0.5
+		RelaxationFactor float64 `yaml:"relaxation"`
+		// Newton-Raphson Method requires multiple sub-iterations to converge. On each
+		// iteration the Jacobian is calculated, which is an expensive operation.
+		// A good number may be between 10 and 100.
+		IterationMax int `yaml:"iterations"`
 	} `yaml:"algorithm"`
 	Symbols struct {
 		// Sorts symbols for consistent logging and testing
@@ -64,16 +72,13 @@ type Config struct {
 	} `yaml:"symbols"`
 }
 
-// New creates blank simulation
+// New creates blank simulation. To run a simulation one
+// must also set the domain with NewTimespan()
+// and create the differential equation system with SetX0FromMap()
+// and SetDiffFromMap(). Examples can be found at https://pkg.go.dev/github.com/soypat/godesim.
 //
-// Default values:
-//
-// Domain is the integration variable. "time" is default value
-//	simulation.Domain
-// Solver used is fourth order Runge-Kutta multivariable integration.
-//  simulation.Solver
-// How many solver steps are run between Timespan steps. Set to 1
-//  simulation.Algorithm.Steps
+// The Default solver is RK4Solver.
+// Other default values are set by DefaultConfig()
 func New() *Simulation {
 	sim := Simulation{
 		change: make(map[state.Symbol]state.Diff),
@@ -92,10 +97,17 @@ func (sim *Simulation) SetConfig(cfg Config) *Simulation {
 
 // DefaultConfig returns configuration set for all new
 // simulations by New()
+//
+// Domain is the integration variable. "time" is default value
+//	simulation.Domain
+// Solver used is fourth order Runge-Kutta multivariable integration.
+//  simulation.Solver
+// How many solver steps are run between Timespan steps. Set to 1
+//  simulation.Algorithm.Steps
 func DefaultConfig() Config {
 	cfg := Config{Domain: "time"}
-	cfg.Log.Results.Precision = -1
-	cfg.Algorithm.Steps = 1
+	cfg.Log.Results.Precision = -1 // to prevent logging
+	cfg.Algorithm.Steps = 1        // 1 step needed as minimum
 	return cfg
 }
 
@@ -219,7 +231,9 @@ func StateDiff(F state.Diffs, S state.State) state.State {
 
 // AddEventHandlers add event handlers to simulation.
 //
-// Events which return errors will stop the simulation and panic
+// Events which return errors will create a special event with
+// an error message for Label(). If one wishes to stop simulation
+// execution one can call panic() in an event.
 func (sim *Simulation) AddEventHandlers(evhand ...Eventer) {
 	if len(evhand) == 0 {
 		throwf("AddEventHandlers: can't add 0 event handlers")
