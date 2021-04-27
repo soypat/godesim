@@ -43,8 +43,7 @@ func RK4Solver(sim *Simulation) []state.State {
 	return states
 }
 
-// RKF45Solver an attempt at a Runge-Kutta-Fehlberg method
-// solver.
+// RKF45Solver Runge-Kutta-Fehlberg of Orders 4 and 5 solver
 //
 // To enable adaptive stepping, Config.Algorithm.Step Min/Max values
 // must be set and a Config.Error.Min must be specified in configuration.
@@ -311,4 +310,106 @@ func denseToBand(d *mat.Dense) *mat.BandDense {
 		}
 	}
 	return b
+}
+
+// DormandPrinceSolver
+//
+// To enable adaptive stepping, Config.Algorithm.Step Min/Max values
+// must be set and a Config.Error.Min must be specified in configuration.
+func DormandPrinceSolver(sim *Simulation) []state.State {
+	// Butcher Tableau for Fehlbergs  4(5) method (Table III https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta%E2%80%93Fehlberg_method)
+	const c20, c21 = 1. / 5., 1. / 5.
+	const c30, c31, c32 = 3. / 10., 3. / 40., 9. / 40.
+	const c40, c41, c42, c43 = 4. / 5., 44. / 45., -56. / 15., 32. / 9
+	const c50, c51, c52, c53, c54 = 8. / 9., 19372. / 6561., -25360. / 2187., 64448. / 6561., -212. / 729.
+	const c60, c61, c62, c63, c64, c65 = 1., 9017. / 3168., -355. / 33., 46732. / 5247., 49. / 176., -5103. / 18656.
+	const c70, c71, c72, c73, c74, c75, c76 = 1., 35. / 384., 0., 500. / 1113., 125. / 192., -2187. / 6784., 11. / 84.
+	// Fifth order
+	const a1, a3, a4, a5, a6, a7 = 5179. / 57600., 7571. / 16695., 393. / 640., -92097. / 339200., 187. / 2100., 1. / 40.
+	// Fourth order
+	const b1, b3, b4, b5, b6 = 35. / 384., 500. / 1113., 125. / 192., -2187. / 6784., 11. / 84.
+	adaptive := sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min
+	states := make([]state.State, sim.Algorithm.Steps+1)
+	h := sim.Dt() / float64(sim.Algorithm.Steps)
+	states[0] = sim.State.Clone()
+	for i := 0; i < len(states)-1; i++ {
+		// create auxiliary states for calculation
+		t := states[i].Time()
+		k2, k3, k4, k5, k6, k7, s4, s5, err45 := states[i].CloneBlank(t+c20*h), states[i].CloneBlank(t+c30*h), states[i].CloneBlank(t+c40*h),
+			states[i].CloneBlank(t+c50*h), states[i].CloneBlank(t+c60*h), states[i].CloneBlank(t+c70*h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h), states[i].CloneBlank(t+h)
+
+		k1 := StateDiff(sim.Diffs, states[i])
+		state.Scale(h, k1)
+
+		state.AddScaledTo(k2, states[i], c21, k1)
+		k2 = StateDiff(sim.Diffs, k2)
+		state.Scale(h, k2)
+
+		state.AddScaledTo(k3, states[i], c31, k1)
+		state.AddScaled(k3, c32, k2)
+		k3 = StateDiff(sim.Diffs, k3)
+		state.Scale(h, k3)
+
+		state.AddScaledTo(k4, states[i], c41, k1)
+		state.AddScaled(k4, c42, k2)
+		state.AddScaled(k4, c43, k3)
+		k4 = StateDiff(sim.Diffs, k4)
+		state.Scale(h, k4)
+
+		state.AddScaledTo(k5, states[i], c51, k1)
+		state.AddScaled(k5, c52, k2)
+		state.AddScaled(k5, c53, k3)
+		state.AddScaled(k5, c54, k4)
+		k5 = StateDiff(sim.Diffs, k5)
+		state.Scale(h, k5)
+
+		state.AddScaledTo(k6, states[i], c61, k1)
+		state.AddScaled(k6, c62, k2)
+		state.AddScaled(k6, c63, k3)
+		state.AddScaled(k6, c64, k4)
+		state.AddScaled(k6, c65, k5)
+		k6 = StateDiff(sim.Diffs, k6)
+		state.Scale(h, k6)
+
+		state.AddScaledTo(k7, states[i], c71, k1)
+		state.AddScaled(k7, c72, k2)
+		state.AddScaled(k7, c73, k3)
+		state.AddScaled(k7, c74, k4)
+		state.AddScaled(k7, c75, k5)
+		state.AddScaled(k7, c76, k6)
+		k7 = StateDiff(sim.Diffs, k7)
+		state.Scale(h, k7)
+
+		// fifth order approximation calc
+		state.AddScaledTo(s5, states[i], a1, k1)
+		state.AddScaled(s5, a3, k3)
+		state.AddScaled(s5, a4, k4)
+		state.AddScaled(s5, a5, k5)
+		state.AddScaled(s5, a6, k6)
+		state.AddScaled(s5, a7, k7)
+
+		// assign solution
+		states[i+1] = s5.Clone()
+		// Adaptive timestep block. Modify step length if necessary
+		if adaptive {
+			// fourth order approximation calc
+			state.AddScaledTo(s4, states[i], b1, k1)
+			state.AddScaled(s4, b3, k3)
+			state.AddScaled(s4, b4, k4)
+			state.AddScaled(s4, b5, k5)
+			state.AddScaled(s4, b6, k6)
+			// Error and adaptive timestep implementation
+			state.Abs(state.SubTo(err45, s4, s5))
+			errRatio := sim.Algorithm.Error.Max / state.Max(err45)
+			hnew := math.Min(math.Max(0.9*h*math.Pow(errRatio, .2), sim.Algorithm.Step.Min), sim.Algorithm.Step.Max)
+			sim.Algorithm.Steps = int(math.Max(float64(sim.Algorithm.Steps)*(h/hnew), 1.0))
+			h = hnew
+			// If we do not have desired error, and have not reached minimum timestep, repeat step
+			if errRatio < 1 && h != sim.Algorithm.Step.Min {
+				i--
+				continue
+			}
+		}
+	}
+	return states
 }

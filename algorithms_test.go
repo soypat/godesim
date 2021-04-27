@@ -89,3 +89,18 @@ func BenchmarkNewton(b *testing.B) {
 	sim.SetX0FromMap(stiffX0)
 	sim.Begin()
 }
+
+func BenchmarkDormandPrince(b *testing.B) {
+	sim := New()
+	sim.Solver = DormandPrinceSolver
+	sim.Algorithm.Steps = b.N
+	sim.SetTimespan(0, 100., 1)
+	// set up adaptive timestep
+	expectedRKStep := sim.Dt() / float64(b.N)
+	sim.Algorithm.Error.Max = .1
+	sim.Algorithm.Step.Min, sim.Algorithm.Step.Max = expectedRKStep, math.Max(expectedRKStep, 4.)
+
+	sim.SetDiffFromMap(stiffDiff)
+	sim.SetX0FromMap(stiffX0)
+	sim.Begin()
+}

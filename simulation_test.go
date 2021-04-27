@@ -18,6 +18,7 @@ var gdsimSolvers = []struct {
 	{name: "rk4", f: RK4Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
 	{name: "rkf45", f: RKF45Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
 	{name: "rkf45tableau", f: RKF45TableauSolver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
+	{name: "dormandPrince", f: DormandPrinceSolver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
 	// Newton raphson error is frighteningly high because quadratic functions are tested near 0.
 	// This is the bane of Newton's method because
 	//   1. the second derivative is high
