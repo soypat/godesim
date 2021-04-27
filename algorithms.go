@@ -312,7 +312,8 @@ func denseToBand(d *mat.Dense) *mat.BandDense {
 	return b
 }
 
-// DormandPrinceSolver
+// DormandPrinceSolver. Very similar to RKF45. Used by Matlab in ode45 solver
+// and Simulink's system solver by default.
 //
 // To enable adaptive stepping, Config.Algorithm.Step Min/Max values
 // must be set and a Config.Error.Min must be specified in configuration.
