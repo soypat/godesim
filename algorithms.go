@@ -241,9 +241,9 @@ func DormandPrinceSolver(sim *Simulation) []state.State {
 	const c50, c51, c52, c53, c54 = 8. / 9., 19372. / 6561., -25360. / 2187., 64448. / 6561., -212. / 729.
 	const c60, c61, c62, c63, c64, c65 = 1., 9017. / 3168., -355. / 33., 46732. / 5247., 49. / 176., -5103. / 18656.
 	const c70, c71, c72, c73, c74, c75, c76 = 1., 35. / 384., 0., 500. / 1113., 125. / 192., -2187. / 6784., 11. / 84.
-	// Fifth order
+	// Alternate solution for error calculation
 	const a1, a3, a4, a5, a6, a7 = 5179. / 57600., 7571. / 16695., 393. / 640., -92097. / 339200., 187. / 2100., 1. / 40.
-	// Fourth order
+	// Fifth order
 	const b1, b3, b4, b5, b6 = 35. / 384., 500. / 1113., 125. / 192., -2187. / 6784., 11. / 84.
 	adaptive := sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min
 	states := make([]state.State, sim.Algorithm.Steps+1)
@@ -288,33 +288,32 @@ func DormandPrinceSolver(sim *Simulation) []state.State {
 		k6 = StateDiff(sim.Diffs, k6)
 		state.Scale(h, k6)
 
-		state.AddScaledTo(k7, states[i], c71, k1)
-		state.AddScaled(k7, c72, k2)
-		state.AddScaled(k7, c73, k3)
-		state.AddScaled(k7, c74, k4)
-		state.AddScaled(k7, c75, k5)
-		state.AddScaled(k7, c76, k6)
-		k7 = StateDiff(sim.Diffs, k7)
-		state.Scale(h, k7)
-
 		// fifth order approximation calc
-		state.AddScaledTo(s5, states[i], a1, k1)
-		state.AddScaled(s5, a3, k3)
-		state.AddScaled(s5, a4, k4)
-		state.AddScaled(s5, a5, k5)
-		state.AddScaled(s5, a6, k6)
-		state.AddScaled(s5, a7, k7)
+		state.AddScaledTo(s5, states[i], b1, k1)
+		state.AddScaled(s5, b3, k3)
+		state.AddScaled(s5, b4, k4)
+		state.AddScaled(s5, b5, k5)
+		state.AddScaled(s5, b6, k6)
 
 		// assign solution
 		states[i+1] = s5.Clone()
 		// Adaptive timestep block. Modify step length if necessary
 		if adaptive {
-			// fourth order approximation calc
-			state.AddScaledTo(s4, states[i], b1, k1)
-			state.AddScaled(s4, b3, k3)
-			state.AddScaled(s4, b4, k4)
-			state.AddScaled(s4, b5, k5)
-			state.AddScaled(s4, b6, k6)
+			state.AddScaledTo(k7, states[i], c71, k1)
+			state.AddScaled(k7, c72, k2)
+			state.AddScaled(k7, c73, k3)
+			state.AddScaled(k7, c74, k4)
+			state.AddScaled(k7, c75, k5)
+			state.AddScaled(k7, c76, k6)
+			k7 = StateDiff(sim.Diffs, k7)
+			state.Scale(h, k7)
+			// Alternate solution approximation calc
+			state.AddScaledTo(s4, states[i], a1, k1)
+			state.AddScaled(s4, a3, k3)
+			state.AddScaled(s4, a4, k4)
+			state.AddScaled(s4, a5, k5)
+			state.AddScaled(s4, a6, k6)
+			state.AddScaled(s4, a7, k7)
 			// Error and adaptive timestep implementation
 			state.Abs(state.SubTo(err45, s4, s5))
 			errRatio := sim.Algorithm.Error.Max / state.Max(err45)
