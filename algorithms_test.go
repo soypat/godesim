@@ -70,16 +70,6 @@ func BenchmarkRKF45(b *testing.B) {
 	sim.Begin()
 }
 
-func BenchmarkRKF45Tableau(b *testing.B) {
-	sim := New()
-	sim.Solver = RKF45TableauSolver
-	sim.Algorithm.Steps = b.N
-	sim.SetTimespan(0, 100., 1)
-	sim.SetDiffFromMap(stiffDiff)
-	sim.SetX0FromMap(stiffX0)
-	sim.Begin()
-}
-
 func BenchmarkNewton(b *testing.B) {
 	sim := New()
 	sim.Solver = NewtonRaphsonSolver
