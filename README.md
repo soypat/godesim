@@ -48,9 +48,8 @@ Godesim is in early development and will naturally change as it is used more.
 |RK4             	|    1575 ns/op	  |   516 B/op	  |    12 allocs/op   |
 |RK5             	|    2351 ns/op	  |   692 B/op	  |    21 allocs/op   |
 |RKF45          	|    3229 ns/op	  |   780 B/op	  |    25 allocs/op   |
-|RKF45Tableau    	|    2452 ns/op	  |   692 B/op	  |    21 allocs/op   |
-|Newton-Raphson          	|    8616 ns/op	  |  4292 B/op	  |    92 allocs/op   |
-|Dormand-Prince   	|    3678 ns/op	  |   859 B/op	  |    29 allocs/op   |
+|Newton-Raphson     |    8616 ns/op	  |  4292 B/op	  |    92 allocs/op   |
+|Dormand-Prince   	|    4365 ns/op	  |   926 B/op	  |    32 allocs/op   |
 
 </details>
 
