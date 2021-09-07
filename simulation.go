@@ -116,6 +116,9 @@ func DefaultConfig() Config {
 // Unrecoverable errors will panic. Warnings may be printed.
 func (sim *Simulation) Begin() {
 	// This is step 0 of simulation
+	for sym := range sim.inputs { // create state symbols and set them to zero in case some inputs depend on other inputs
+		sim.State.UEqual(sym, 0)
+	}
 	sim.setInputs()
 	sim.verifyPreBegin()
 

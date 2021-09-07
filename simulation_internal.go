@@ -106,6 +106,7 @@ func (sim *Simulation) setInputs() {
 	if len(sim.inputs) == 0 {
 		return
 	}
+	// Calculate initial inputs.
 	for sym, f := range sim.inputs {
 		sim.State.UEqual(sym, f(sim.State))
 	}
