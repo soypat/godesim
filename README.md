@@ -108,6 +108,10 @@ I've been having problems running Pixel on my machine so the simulation animatio
 * [Double pendulum exhibiting chaotic motion](./_examples/doublePendulum)
 * [N-Body simulation](./_examples/n-body)
 
+### Final notes
+Future versions of gonum will have an ODE solver too. Ideally godesim would base it's algorithms on `gonum`'s implementation. See https://github.com/gonum/exp `ode` package.
+
+
 ## Contributing
 
 Pull requests welcome!
