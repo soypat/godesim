@@ -218,6 +218,29 @@ func (sim *Simulation) Results(sym state.Symbol) []float64 {
 	return nil
 }
 
+// StatesCopy returns a copy of all result states. Simulation must have been run beforehand.
+func (sim *Simulation) States() (states []state.State) {
+	if sim.IsRunning() {
+		throwf("states requested during simulation execution")
+	}
+	n := len(sim.results)
+	if n == 0 {
+		throwf("requested results of length 0. Did you remember to call Begin() ?")
+	}
+	states = make([]state.State, n)
+	for i := 0; i < n; i++ {
+		states[i] = sim.results[i].Clone()
+	}
+	return states
+}
+
+// ForEachState calls f on all result states. Simulation must have been run beforehand.
+func (sim *Simulation) ForEachState(f func(i int, s state.State)) {
+	for i := range sim.results {
+		f(i, sim.results[i])
+	}
+}
+
 // StateDiff obtain Change results without modifying State
 // Returns state evolution (result of applying Changer functions to S)
 func StateDiff(F state.Diffs, S state.State) state.State {
