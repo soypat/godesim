@@ -364,6 +364,58 @@ func TestBadStateDiff(t *testing.T) {
 	StateDiff(F, s)
 }
 
+func TestGreedyStates(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Error("panic expected when States() called on unexecuted simulation")
+		}
+	}()
+	newWorkingSim().States()
+}
+
+func TestGreedyForEachStates(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Error("panic expected when States() called on unexecuted simulation")
+		}
+	}()
+	newWorkingSim().ForEachState(func(i int, s state.State) {})
+}
+
+func TestStates(t *testing.T) {
+	sim := newWorkingSim()
+	sim.Begin()
+	tv := sim.Results(sim.Domain)
+	nt := len(tv)
+	st := sim.States()
+	ns := len(st)
+
+	nfe := 0
+	sim.ForEachState(func(i int, s state.State) {
+		if i != nfe {
+			t.Error("expected +1 incremental steps in ForEachState")
+		}
+		if tv[nfe] != s.Time() || s.Time() != st[nfe].Time() {
+			t.Error("domain mismatch in ForEachState")
+		}
+		xv := st[nfe].XVector()
+		for ix, x := range s.XVector() {
+			if x != xv[ix] {
+				t.Error("state vector mismatch in ForEachState")
+			}
+		}
+
+		nfe++
+
+	})
+	if nt != ns || nfe != ns {
+		t.Error("expected results and states to be equal length")
+	}
+
+}
+
 func applyFunc(sli []float64, f func(float64) float64) []float64 {
 	res := make([]float64, len(sli))
 	for i, v := range sli {

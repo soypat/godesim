@@ -236,6 +236,13 @@ func (sim *Simulation) States() (states []state.State) {
 
 // ForEachState calls f on all result states. Simulation must have been run beforehand.
 func (sim *Simulation) ForEachState(f func(i int, s state.State)) {
+	if sim.IsRunning() {
+		throwf("states requested during simulation execution")
+	}
+	n := len(sim.results)
+	if n == 0 {
+		throwf("requested results of length 0. Did you remember to call Begin() ?")
+	}
 	for i := range sim.results {
 		f(i, sim.results[i])
 	}
