@@ -330,3 +330,33 @@ func DormandPrinceSolver(sim *Simulation) []state.State {
 	}
 	return states
 }
+
+// DirectIntegrationSolver performs naive integration of ODEs. Should only be
+// used to compare with other methods. Has the advantage of only performing one
+// differentiation per step.
+//  y_{n+1} = y_{n} + (dy/dt_{n} + dy/dt_{n-1})*step/2
+func DirectIntegrationSolver(sim *Simulation) []state.State {
+	states := make([]state.State, sim.Algorithm.Steps+1)
+	t := sim.CurrentTime()
+	h := sim.Dt() / float64(sim.Algorithm.Steps)
+	states[0] = sim.State.Clone()
+	y := sim.State.Clone()
+	dydx := StateDiff(sim.Diffs, sim.State)
+	for i := 0; i < len(states)-1; i++ {
+		t += h
+		ynext := sim.State.CloneBlank(t)
+		dydxnext := StateDiff(sim.Diffs, y)
+		aux := y.CloneBlank(y.Time())
+		state.AddScaledTo(ynext, y, h/2, state.AddTo(aux, dydxnext, dydx))
+		states[i+1] = ynext.Clone()
+		dydx = dydxnext
+	}
+	return states
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}

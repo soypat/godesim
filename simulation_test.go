@@ -8,13 +8,12 @@ import (
 )
 
 // add all explicit testable solvers here
-// var gdsimSolvers = []func(*Simulation) []state.State{RK4Solver, RKF45Solver, RKF45TableauSolver, NewtonRaphsonSolver}
-
 var gdsimSolvers = []struct {
 	name string
 	f    func(*Simulation) []state.State
 	err  func(stepsize, iteration float64) float64
 }{
+	{name: "naive2", f: DirectIntegrationSolver, err: func(h, i float64) float64 { return 2 * h * i }},
 	{name: "rk4", f: RK4Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
 	{name: "rkf45", f: RKF45Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
 	{name: "dormandPrince", f: DormandPrinceSolver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},

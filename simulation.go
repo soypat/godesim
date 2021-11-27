@@ -248,8 +248,8 @@ func (sim *Simulation) ForEachState(f func(i int, s state.State)) {
 	}
 }
 
-// StateDiff obtain Change results without modifying State
-// Returns state evolution (result of applying Changer functions to S)
+// StateDiff obtain Diffs results without modifying State
+// Returns state evolution (result of applying Diffs functions to S)
 func StateDiff(F state.Diffs, S state.State) state.State {
 	diff := S.Clone()
 	syms := S.XSymbols()
