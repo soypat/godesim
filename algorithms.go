@@ -390,12 +390,15 @@ func RKF78Solver(sim *Simulation) []state.State {
 		states[i+1] = snext.Clone()
 		// Adaptive timestep block. Modify step length if necessary
 		if adaptive {
-			state.AddScaled(err78, -41./840., k[0])
-			state.AddScaled(err78, -41./840., k[10])
-			state.AddScaled(err78, -41./840., k[11])
-			state.AddScaled(err78, -41./840., k[12])
+			errFactor := h * 41. / 840.
+			state.AddScaled(err78, -errFactor, k[0])
+			state.AddScaled(err78, -errFactor, k[10])
+			state.AddScaled(err78, errFactor, k[11])
+			state.AddScaled(err78, errFactor, k[12])
 			errRatio := sim.Algorithm.Error.Max / state.Max(err78)
-			hnew := math.Min(math.Max(0.9*h*math.Pow(errRatio, .2), sim.Algorithm.Step.Min), sim.Algorithm.Step.Max)
+			scale := 0.8 * math.Abs(math.Pow(errRatio, 1./7.))
+			scale = math.Min(math.Max(scale, .125), 4.0)
+			hnew := math.Min(math.Max(h*scale, sim.Algorithm.Step.Min), sim.Algorithm.Step.Max)
 			sim.Algorithm.Steps = int(math.Max(float64(sim.Algorithm.Steps)*(h/hnew), 1.0))
 			h = hnew
 			// If we do not have desired error, and have not reached minimum timestep, repeat step
