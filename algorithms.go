@@ -331,6 +331,84 @@ func DormandPrinceSolver(sim *Simulation) []state.State {
 	return states
 }
 
+func RKF78Solver(sim *Simulation) []state.State {
+	// Table X. from Classical Fifth, Sixth, Seventh and Eight Order Runge Kutta Formulas with stepsize control by Erwin Fehlberg.
+	var (
+		cx0 = [13]float64{0, 2. / 27., 1. / 9., 1. / 6., 5. / 12., //4
+			1. / 2., 5. / 6., 1. / 6., 2. / 3., 1. / 3., 1, 0, 1}
+		c = [13][12]float64{
+			1:  {0: 2. / 27.},
+			2:  {0: 1. / 36., 1: 1. / 12.},
+			3:  {0: 1. / 24., 2: 1. / 8.},
+			4:  {0: 5. / 12., 2: -25. / 16., 3: 25. / 16.},
+			5:  {0: 1. / 20., 3: 1. / 4., 4: 1. / 5.},
+			6:  {0: -25. / 108., 3: 125. / 108., 4: -65. / 27., 5: 125. / 54.},
+			7:  {0: 31. / 300, 4: 61. / 225., 5: -2. / 9., 6: 13. / 900.},
+			8:  {0: 2, 3: -53. / 6., 4: 704. / 45., 5: -107. / 9., 6: 67. / 90., 7: 3},
+			9:  {0: -91. / 108., 3: 23. / 108., 4: -976. / 135., 5: 311. / 54., 6: -19. / 60., 7: 17. / 6., 8: -1. / 12.},
+			10: {0: 2383. / 4100., 3: -341. / 164., 4: 4496. / 1025., -301. / 82., 2133. / 4100. /*neg?*/, 45. / 82., 45. / 164., 18. / 41.},
+			11: {0: 3. / 205., 5: -6. / 41., -3. / 205., -3. / 41., 3. / 41., 6. / 41.},
+			12: {0: -1777. / 4100., 3: -341. / 164., 4496. / 1025., -289. / 82., 2193. / 4100., 51. / 82., 33. / 164., 12. / 41., 0, 1},
+		}
+		b = [13]float64{81. / 840., 5: 34. / 105., 9. / 35., 9. / 35., 9. / 280., 9. / 280., 41. / 840.}
+	)
+	adaptive := sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min
+	states := make([]state.State, sim.Algorithm.Steps+1)
+	h := sim.Dt() / float64(sim.Algorithm.Steps)
+	states[0] = sim.State.Clone()
+	var k [13]state.State
+	var snext, err78 state.State
+	for i := 0; i < len(states)-1; i++ {
+		// create auxiliary states for calculation
+		t := states[i].Time()
+
+		err78 = states[i].CloneBlank(t + h)
+		snext = states[i].CloneBlank(t + h)
+		for ord := 1; ord < 13; ord++ {
+			k[ord] = states[i].CloneBlank(t + cx0[ord]*h)
+		}
+
+		k[0] = StateDiff(sim.Diffs, states[i])
+		state.Scale(h, k[0])
+
+		for ord := 1; ord < 13; ord++ {
+			state.AddScaledTo(k[ord], states[i], c[ord][0], k[0])
+			for j := 1; j < ord; j++ {
+				state.AddScaled(k[ord], c[ord][j], k[j])
+			}
+			k[ord] = StateDiff(sim.Diffs, k[ord])
+			state.Scale(h, k[ord])
+		}
+
+		// eight order approximation calc.
+		state.AddScaledTo(snext, states[i], b[0], k[0])
+		for ord := 1; ord < 13; ord++ {
+			state.AddScaled(snext, b[ord], k[ord])
+		}
+
+		// assign solution
+		states[i+1] = snext.Clone()
+		// Adaptive timestep block. Modify step length if necessary
+		if adaptive {
+			state.AddScaled(err78, -41./840., k[0])
+			state.AddScaled(err78, -41./840., k[10])
+			state.AddScaled(err78, -41./840., k[11])
+			state.AddScaled(err78, -41./840., k[12])
+			errRatio := sim.Algorithm.Error.Max / state.Max(err78)
+			hnew := math.Min(math.Max(0.9*h*math.Pow(errRatio, .2), sim.Algorithm.Step.Min), sim.Algorithm.Step.Max)
+			sim.Algorithm.Steps = int(math.Max(float64(sim.Algorithm.Steps)*(h/hnew), 1.0))
+			h = hnew
+			// If we do not have desired error, and have not reached minimum timestep, repeat step
+			if errRatio < 1 && h != sim.Algorithm.Step.Min {
+				i--
+				continue
+			}
+		}
+
+	}
+	return states
+}
+
 // DirectIntegrationSolver performs naive integration of ODEs. Should only be
 // used to compare with other methods. Has the advantage of only performing one
 // differentiation per step.

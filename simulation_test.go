@@ -24,6 +24,7 @@ var gdsimSolvers = []struct {
 	// The result is very bad convergence unless a small step is used. For these problems
 	// explicit methods are much more suitable.
 	{name: "newton", f: NewtonRaphsonSolver, err: func(h, i float64) float64 { return 2 * h * i }},
+	{name: "rkf78", f: RKF78Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
 }
 
 func TestQuadTime(t *testing.T) {
