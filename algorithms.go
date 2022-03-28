@@ -350,7 +350,7 @@ func RKF78Solver(sim *Simulation) []state.State {
 			11: {0: 3. / 205., 5: -6. / 41., -3. / 205., -3. / 41., 3. / 41., 6. / 41.},
 			12: {0: -1777. / 4100., 3: -341. / 164., 4496. / 1025., -289. / 82., 2193. / 4100., 51. / 82., 33. / 164., 12. / 41., 0, 1},
 		}
-		b = [13]float64{81. / 840., 5: 34. / 105., 9. / 35., 9. / 35., 9. / 280., 9. / 280., 41. / 840.}
+		b = [13]float64{41. / 840., 5: 34. / 105., 9. / 35., 9. / 35., 9. / 280., 9. / 280., 41. / 840.}
 	)
 	adaptive := sim.Algorithm.Error.Max > 0 && sim.Algorithm.Step.Min > 0 && sim.Algorithm.Step.Max > sim.Algorithm.Step.Min
 	states := make([]state.State, sim.Algorithm.Steps+1)
