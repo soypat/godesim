@@ -18,6 +18,7 @@ coverage.txt
 *.m
 *.m~
 *.py
+*.f
 !_assets/nr_py.m
 ### Go ###
 # Binaries for programs and plugins

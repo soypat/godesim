@@ -25,6 +25,7 @@ var gdsimSolvers = []struct {
 	// explicit methods are much more suitable.
 	{name: "newton", f: NewtonRaphsonSolver, err: func(h, i float64) float64 { return 2 * h * i }},
 	{name: "rkf78", f: RKF78Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
+	{name: "rkf10_12", f: RKF10_12Solver, err: func(h, i float64) float64 { return math.Pow(h*i, 4) }},
 }
 
 func TestQuadTime(t *testing.T) {
@@ -90,7 +91,7 @@ func TestQuadratic(t *testing.T) {
 	}
 }
 
-func TestSimpleInput(t *testing.T) {
+func TestInputSimple(t *testing.T) {
 	for _, solver := range gdsimSolvers {
 		Dtheta := func(s state.State) float64 {
 			return s.U("u")
