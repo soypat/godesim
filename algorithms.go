@@ -412,12 +412,12 @@ func RKF78Solver(sim *Simulation) []state.State {
 	return states
 }
 
-func RKF10_12Solver(sim *Simulation) []state.State {
+func RKN10_12Solver(sim *Simulation) []state.State {
 	const rkLen = 17
 	// Table X. from Classical Fifth, Sixth, Seventh and Eight Order Runge Kutta Formulas with stepsize control by Erwin Fehlberg.
 	var (
-		cx0 = [rkLen]float64{0.0e0, 2.0e-2, 4.0e-2, 1.0e-1, 1.33333333333333333333333333333e-1, 1.6e-1, 5.0e-2, 2.0e-1, 2.5e-1, 3.33333333333333333333333333333e-1, 5.0e-1, 5.55555555555555555555555555556e-1, 7.5e-1, 8.57142857142857142857142857143e-1, 9.45216222272014340129957427739e-1, 1.0e0, 1.0e0}
-		c   = [rkLen][rkLen]float64{
+		c = [rkLen]float64{0.0e0, 2.0e-2, 4.0e-2, 1.0e-1, 1.33333333333333333333333333333e-1, 1.6e-1, 5.0e-2, 2.0e-1, 2.5e-1, 3.33333333333333333333333333333e-1, 5.0e-1, 5.55555555555555555555555555556e-1, 7.5e-1, 8.57142857142857142857142857143e-1, 9.45216222272014340129957427739e-1, 1.0e0, 1.0e0}
+		A = [rkLen][rkLen]float64{
 			1:  {0: 2e-4},
 			2:  {2.66666666666666666666666666667e-4, 5.33333333333333333333333333333e-4},
 			3:  {2.91666666666666666666666666667e-3, -4.16666666666666666666666666667e-3, 6.25e-3},
@@ -446,44 +446,54 @@ func RKF10_12Solver(sim *Simulation) []state.State {
 	states := make([]state.State, sim.Algorithm.Steps+1)
 	h := sim.Dt() / float64(sim.Algorithm.Steps)
 	states[0] = sim.State.Clone()
-	var k [rkLen]state.State
-	var snext, err10_12 state.State
+	var F, hF [rkLen]state.State
+	var hFb, hFbhat, snext, err10_12 state.State
+	h2A := [rkLen][rkLen]float64{}
+	for i := range h2A {
+		for j := range h2A[i] {
+			h2A[i][j] = A[i][j] * h * h
+		}
+	}
 	for i := 0; i < len(states)-1; i++ {
+		y := states[i]
 		// create auxiliary states for calculation
+		t := y.Time()
 
-		t := states[i].Time()
+		// h*dy
+		dy := StateDiff(sim.Diffs, y)
+		hdy := state.ScaleTo(y.Clone(), h, dy)
+		hFb = y.CloneBlank(t + h)
+		hFbhat = y.CloneBlank(t + h)
+		snext = y.CloneBlank(t + h)
+		for j := 0; j < rkLen; j++ {
 
-		err10_12 = states[i].CloneBlank(t + h)
-		snext = states[i].CloneBlank(t + h)
-		for ord := 1; ord < rkLen; ord++ {
-			k[ord] = states[i].CloneBlank(t + cx0[ord]*h)
-		}
+			// Calculate second-derivative with following input to Diff
+			// input = t+h*c[ord],  y + h*c(jj)*dy + F*h2A(:,jj)
+			input := y.CloneBlank(t + h*c[j]) // set integration domain variable.
+			hF[j] = input.Clone()
 
-		k[0] = StateDiff(sim.Diffs, states[i])
-		state.Scale(h, k[0])
-
-		for ord := 1; ord < rkLen; ord++ {
-			state.AddScaledTo(k[ord], states[i], c[ord][0], k[0])
-			for j := 1; j < ord; j++ {
-				state.AddScaled(k[ord], c[ord][j], k[j])
+			state.AddScaledTo(input, y, c[j], hdy)
+			for iF := 0; iF < j; iF++ {
+				state.AddScaled(input, h2A[j][iF], F[iF])
 			}
-			k[ord] = StateDiff(sim.Diffs, k[ord])
-			state.Scale(h, k[ord])
+			// finally F[:,jj] = Diff( input )
+			F[j] = StateDiff(sim.Diffs, input)
 		}
 
-		// tenth order approximation calc.
-		state.AddScaledTo(snext, states[i], b[0], k[0])
-		for ord := 1; ord < rkLen; ord++ {
-			state.AddScaled(snext, b[ord], k[ord])
+		// Pre-compute solutions (?)
+		for j := 0; j < rkLen; j++ {
+			state.ScaleTo(hF[j], h, F[j]) // generate hF matrix
+			state.AddScaled(hFb, b[j], hF[j])
+			state.AddScaled(hFbhat, bhat[j], hF[j])
 		}
-
+		snext = state.AddScaledTo(snext, y, h, state.AddTo(snext, dy, hFbhat))
 		// assign solution
 		states[i+1] = snext.Clone()
 		// Adaptive timestep block. Modify step length if necessary
 		if false && adaptive {
-			state.AddScaledTo(err10_12, states[i], bhat[0], k[0])
+			state.AddScaledTo(err10_12, states[i], bhat[0], hdy)
 			for ord := 1; ord < rkLen; ord++ {
-				state.AddScaled(snext, bhat[ord], k[ord])
+				state.AddScaled(snext, bhat[ord], F[ord])
 			}
 			state.Sub(err10_12, snext)
 			errRatio := sim.Algorithm.Error.Max / state.Max(err10_12)
