@@ -10,6 +10,8 @@ Simulate complex systems with a simple API.
 
 Wrangle non-linear differential equations while writing maintainable, simple code.
 
+Note: [gonum/exp](https://github.com/gonum/exp) is still in early development but offers a more flexible and lightweight alternative to `godesim`'s full fledged simulator.
+
 ## Why Godesim?
 
 ODE solvers seem to fill the niche of simple system solvers in
